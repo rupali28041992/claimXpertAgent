@@ -3,7 +3,6 @@ package com.nextgen.claims.rules;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.gorules.zen_engine.JsonBuffer;
-import io.gorules.zen_engine.NoPointer;
 import io.gorules.zen_engine.ZenDecision;
 import io.gorules.zen_engine.ZenEngine;
 import io.gorules.zen_engine.ZenEvaluateOptions;
@@ -28,7 +27,7 @@ import java.util.concurrent.ExecutionException;
 public class ZenDecisionRunner {
 
     private final ObjectMapper objectMapper;
-    private final ZenEngine zenEngine = new ZenEngine(NoPointer.INSTANCE);
+    private final ZenEngine zenEngine = new ZenEngine(null,null);
 
     public ZenDecision load(Resource decisionGraph) {
         try {
