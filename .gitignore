@@ -1,6 +1,0 @@
-target/
-logs/
-.idea/
-.claude/
-${project.build.directory}/
-*.iml
