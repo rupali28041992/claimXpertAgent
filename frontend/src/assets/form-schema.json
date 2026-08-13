@@ -1,0 +1,58 @@
+{
+  "id": "insurance-claim",
+  "title": "Insurance Claim Filing",
+  "fields": [
+    {
+      "id": "claim_type",
+      "type": "radio",
+      "label": "Welcome! I'm your claims assistant. Let's get started — what type of claim are you filing?",
+      "required": true,
+      "options": [
+        { "value": "AUTO", "label": "Auto" },
+        { "value": "HEALTH", "label": "Health" },
+        { "value": "PROPERTY", "label": "Property" },
+        { "value": "LIFE", "label": "Life" }
+      ]
+    },
+    {
+      "id": "incident_date",
+      "type": "date",
+      "label": "When did the incident occur?",
+      "required": true,
+      "showIf": [
+        { "field": "claim_type", "operator": "notEmpty" }
+      ]
+    },
+    {
+      "id": "incident_location",
+      "type": "text",
+      "label": "Where did the incident happen?",
+      "required": true,
+      "placeholder": "e.g. MG Road, Bangalore",
+      "showIf": [
+        { "field": "incident_date", "operator": "notEmpty" }
+      ]
+    },
+    {
+      "id": "damage_description",
+      "type": "file",
+      "label": "Please upload any supporting documents or photos related to the incident.",
+      "required": true,
+      "accept": ".jpg,.jpeg,.png,.pdf,.doc,.docx",
+      "multiple": true,
+      "showIf": [
+        { "field": "incident_location", "operator": "notEmpty" }
+      ]
+    },
+    {
+      "id": "additional_comments",
+      "type": "textarea",
+      "label": "Any additional comments or information you'd like to add? (Optional)",
+      "required": false,
+      "placeholder": "Add any extra details, special circumstances, or notes for the claims team...",
+      "showIf": [
+        { "field": "damage_description", "operator": "notEmpty" }
+      ]
+    }
+  ]
+}

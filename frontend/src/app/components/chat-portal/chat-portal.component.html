@@ -1,0 +1,334 @@
+<!-- ══ PAGE HEADER ══════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="page-header-inner">
+    <div class="page-logo">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#2a69ac"/>
+      </svg>
+      <span>InsureCo</span>
+    </div>
+    <nav class="page-nav">
+      <a href="#">Home</a>
+      <a href="#" class="nav-active">File Claim</a>
+      <a href="#">My Claims</a>
+      <a href="#">Support</a>
+    </nav>
+    <div class="page-user">
+      <div class="user-dot"></div>
+      <span>Guest</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ MAIN CONTENT ═════════════════════════════════════════ -->
+<main class="portal-main">
+  <div class="portal-card">
+
+    <!-- Card header -->
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1.8"/>
+            <path d="M8 12l2.5 2.5L16 9" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="card-title">File a New Claim</div>
+          <div class="card-sub">AI-assisted · Takes under 3 minutes</div>
+        </div>
+      </div>
+      @if (schema && !isLoading) {
+        <div class="card-step-badge">
+          {{ answeredFields.length }}&nbsp;/&nbsp;{{ totalApplicableFields() }} fields
+        </div>
+      }
+    </div>
+
+    <!-- Progress bar -->
+    @if (schema && !isLoading) {
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+      </div>
+    }
+
+    <!-- ── Intro agent message ── -->
+    <div class="intro-section">
+      <div class="intro-avatar">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+          <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
+          <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="intro-bubble">
+        <div class="intro-agent-name">Claims Assistant</div>
+        <p>Hello! 👋 I'm here to help you file your insurance claim quickly and securely.
+          I'll ask you a few questions — new fields will appear as you go, and you can
+          edit any answer at any time.</p>
+        <p class="intro-note">Please fill in the details below to get started.</p>
+      </div>
+    </div>
+
+    <!-- ── Form body ── -->
+    <div class="form-body">
+
+      @if (isLoading) {
+        <div class="skeleton-wrap">
+          <div class="sk sk-q"></div>
+          <div class="sk sk-opt"></div>
+          <div class="sk sk-opt short"></div>
+          <div class="sk sk-opt"></div>
+        </div>
+      }
+
+      @if (isResolvingPolicy) {
+        <div class="skeleton-wrap">
+          <div class="sk sk-q"></div>
+          <div class="sk sk-opt"></div>
+        </div>
+      }
+
+      @if (policyLookupError) {
+        <div class="intro-note" style="color:#dc2626; padding: 8px 0;">{{ policyLookupError }}</div>
+      }
+
+      @if (!isLoading && form) {
+        <form [formGroup]="form" autocomplete="off">
+
+          <!-- Fields rendered in schema order: answered rows and the active field
+               interleaved. 'a:' vs 'c:' key prefix forces DOM destroy+recreate
+               whenever a field transitions between answered and active states. -->
+          @for (item of displayItems; track item.key) {
+
+            <!-- ── Answered row ── -->
+            @if (!item.isActive) {
+              <div class="answered-row">
+                <div class="ans-label">{{ item.field.label }}</div>
+                <div class="ans-right">
+                  <span class="ans-value">
+                    <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
+                      <circle cx="7" cy="7" r="7" fill="#22c55e"/>
+                      <path d="M3.5 7l2.3 2.3L10.5 5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                    {{ item.displayValue }}
+                  </span>
+                  <button type="button" class="btn-edit" (click)="onEditField(item.field)" [disabled]="isSubmitted">
+                    <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Edit
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- ── Active field ── -->
+            @if (item.isActive) {
+              <div class="active-field" #activeFieldRef>
+                <div class="active-question">
+                  {{ item.field.label }}
+                  @if (item.field.required !== false) {<span class="req-star">*</span>}
+                </div>
+
+                <!-- RADIO -->
+                @if (item.field.type === 'radio') {
+                  <div class="poll-list">
+                    @for (opt of item.field.options || []; track opt.value) {
+                      <div class="poll-item"
+                           [class.poll-item--active]="getSelectedRadioValue(item.field.id) === opt.value"
+                           (click)="onRadioSelect(item.field, opt.value)">
+                        <div class="poll-radio">
+                          @if (getSelectedRadioValue(item.field.id) === opt.value) {
+                            <div class="poll-radio-dot"></div>
+                          }
+                        </div>
+                        <span class="poll-item-label">{{ opt.label }}</span>
+                        @if (getSelectedRadioValue(item.field.id) === opt.value) {
+                          <svg viewBox="0 0 20 20" fill="none" width="18" height="18" class="poll-tick">
+                            <circle cx="10" cy="10" r="10" fill="#2a69ac"/>
+                            <path d="M6 10l3 3L14 7" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                          </svg>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- DROPDOWN -->
+                @if (item.field.type === 'dropdown') {
+                  <div class="input-shell">
+                    <select [formControlName]="item.field.id" class="field-select"
+                            (change)="onAnswer(item.field)">
+                      <option value="" disabled selected>Choose an option...</option>
+                      @for (opt of item.field.options || []; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                    <svg class="select-icon" viewBox="0 0 20 20" fill="none" width="16" height="16">
+                      <path d="M5 8l5 5 5-5" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                }
+
+                <!-- TEXT / NUMBER -->
+                @if (item.field.type === 'text') {
+                  <div class="input-shell">
+                    <input [type]="item.field.inputType || 'text'"
+                           [formControlName]="item.field.id"
+                           [placeholder]="item.field.placeholder || 'Enter your answer...'"
+                           class="field-input"
+                           (keydown.enter)="onAnswer(item.field)"
+                           (blur)="onAnswer(item.field)" />
+                  </div>
+                  <div class="field-hint">Press Enter or click away to continue</div>
+                }
+
+                <!-- TEXTAREA -->
+                @if (item.field.type === 'textarea') {
+                  <div class="input-shell">
+                    <textarea [formControlName]="item.field.id"
+                              [placeholder]="item.field.placeholder || 'Describe in detail...'"
+                              class="field-textarea" rows="4"
+                              (keydown.enter)="onTextareaEnter($event, item.field)"
+                              (blur)="onAnswer(item.field)">
+                    </textarea>
+                  </div>
+                  <div class="field-hint">
+                    @if (item.field.required === false) {
+                      Optional — click outside to skip or add your comments
+                    } @else {
+                      Click outside the box to continue
+                    }
+                  </div>
+                }
+
+                <!-- DATE — blur handles re-selecting the same date (change won't fire) -->
+                @if (item.field.type === 'date') {
+                  <div class="input-shell date-shell">
+                    <svg class="date-icon" viewBox="0 0 24 24" fill="none" width="16" height="16">
+                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#94a3b8" stroke-width="1.6"/>
+                      <path d="M16 2v4M8 2v4M3 10h18" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                    <input type="date" [formControlName]="item.field.id"
+                           class="field-input date-input" [max]="today"
+                           (change)="onAnswer(item.field)"
+                           (blur)="onAnswer(item.field)" />
+                  </div>
+                }
+
+                <!-- FILE -->
+                @if (item.field.type === 'file') {
+                  <label class="file-drop" [for]="'file-' + item.field.id">
+                    <input [id]="'file-' + item.field.id" type="file" class="file-hidden"
+                           [accept]="item.field.accept || ''" [multiple]="item.field.multiple || false"
+                           (change)="onFileSelected($event, item.field)" />
+                    <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+                      <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                      <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    @if (!selectedFiles[item.field.id].length) {
+                      <span class="file-label">Click to browse or drag files here</span>
+                      <span class="file-types">{{ item.field.accept }}</span>
+                    } @else {
+                      <span class="file-label selected">{{ selectedFiles[item.field.id].length }} file(s) selected</span>
+                      @for (f of selectedFiles[item.field.id]; track f.name) {
+                        <span class="file-name">📄 {{ f.name }}</span>
+                      }
+                    }
+                  </label>
+                  <div class="file-actions">
+                    <button type="button" class="btn-primary"
+                            [disabled]="!selectedFiles[item.field.id].length"
+                            (click)="onAnswer(item.field)">Confirm Upload</button>
+                    <button type="button" class="btn-ghost" (click)="onSkipFile(item.field)">Skip for now</button>
+                  </div>
+                }
+
+              </div>
+            }
+
+          }
+
+          <!-- Submit -->
+          @if (isReadyToSubmit()) {
+            <div class="submit-zone">
+              <div class="all-done-label">
+                <svg viewBox="0 0 20 20" fill="none" width="15" height="15">
+                  <circle cx="10" cy="10" r="9" stroke="#22c55e" stroke-width="1.6"/>
+                  <path d="M6 10l3 3L14 7" stroke="#22c55e" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                All fields complete — review your answers above before submitting
+              </div>
+              @if (submitError) {
+                <div class="intro-note" style="color:#dc2626; padding: 8px 0;">{{ submitError }}</div>
+              }
+              <button type="button" class="btn-submit" [disabled]="isSubmitting" (click)="onSubmit()">
+                {{ isSubmitting ? 'Submitting...' : 'Submit Claim' }}
+                <svg viewBox="0 0 24 24" fill="none" width="17" height="17">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          }
+
+          <!-- Success — agent confirmation message -->
+          @if (isSubmitted) {
+            <div class="agent-confirm">
+              <div class="intro-avatar agent-confirm-avatar">
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="agent-confirm-bubble">
+                <div class="intro-agent-name">Claims Assistant</div>
+                <div class="agent-confirm-check">
+                  <div class="success-circle success-circle--sm">
+                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                      <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <span class="agent-confirm-title">Claim Submitted Successfully!</span>
+                </div>
+                <p>{{ submitResult?.summary }}</p>
+                <p>Status: <strong>{{ submitResult?.status }}</strong></p>
+                <div class="agent-confirm-ref">
+                  Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
+                </div>
+              </div>
+            </div>
+          }
+
+        </form>
+      }
+    </div>
+
+    <!-- Card footer -->
+    <div class="card-footer">
+      <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+        <path d="M8 1L2 4v4c0 3.3 2.3 6.4 6 7 3.7-.6 6-3.7 6-7V4L8 1z" fill="#94a3b8"/>
+      </svg>
+      256-bit SSL Encrypted &nbsp;·&nbsp; Your data is never shared
+    </div>
+
+  </div>
+</main>
+
+<!-- ══ PAGE FOOTER ══════════════════════════════════════════ -->
+<footer class="page-footer">
+  <div class="page-footer-inner">
+    <div class="footer-brand">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#94a3b8"/>
+      </svg>
+      <span>InsureCo</span>
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Contact Us</a>
+    </div>
+    <div class="footer-copy">© 2026 InsureCo. All rights reserved.</div>
+  </div>
+</footer>

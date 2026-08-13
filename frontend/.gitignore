@@ -1,0 +1,9 @@
+target/
+logs/
+.idea/
+.claude/
+${project.build.directory}/
+*.iml
+node_modules/
+.angular/
+dist/
