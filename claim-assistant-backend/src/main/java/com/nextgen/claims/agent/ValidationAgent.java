@@ -40,20 +40,28 @@ public class ValidationAgent {
                 .map(a -> a.getQuestionId() + ": " + a.getAnswerText())
                 .collect(Collectors.joining("\n"));
 
-        String prompt = """
+        // NOTE: dynamic values must NOT be baked into the template string (e.g. via
+        // String.formatted/concatenation). ChatClient.user(String) renders the text through
+        // Spring AI's PromptTemplate, which wraps an ST4 (StringTemplate 4) template using
+        // '{' and '}' as the expression delimiters. If a value such as extractedFields.toString()
+        // (which renders as the literal "{}" for an empty map) is embedded in the raw string
+        // before it reaches .user(...), ST4 re-parses those braces as template expressions and
+        // throws STException. Passing each dynamic value through .param(...) instead makes ST4
+        // substitute it as a literal attribute value, never re-lexed as template syntax.
+        String template = """
                 You are validating one uploaded claim document against the insurer's policy wording.
 
                 POLICY CLAUSE(S):
-                %s
+                {clauseText}
 
                 DOCUMENT TEXT (OCR extracted):
-                %s
+                {ocrText}
 
                 EXTRACTED FIELDS FROM DOCUMENT:
-                %s
+                {extractedFields}
 
                 ANSWERS THE CUSTOMER TYPED IN THE FORM:
-                %s
+                {answersText}
 
                 Check two things only:
                 1. Does anything in the document contradict or fail to satisfy the policy clause(s) above
@@ -63,10 +71,15 @@ public class ValidationAgent {
 
                 Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
                 "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(clauseText, ocrText, extractedFields, answersText);
+                """;
 
         return chatClient.prompt()
-                .user(prompt)
+                .user(u -> u
+                        .text(template)
+                        .param("clauseText", clauseText)
+                        .param("ocrText", ocrText)
+                        .param("extractedFields", extractedFields)
+                        .param("answersText", answersText))
                 .call()
                 .entity(ValidationResult.class);
     }

@@ -13,9 +13,9 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: llama3
+        model: qwen3.5:9b
       embedding:
-        model: nomic-embed-text
+        model: bge-m3
 
 # Simple threshold config for GoRules-style routing until the real
 # GoRules SDK/table is wired in. Swap RulesEngineService's internals

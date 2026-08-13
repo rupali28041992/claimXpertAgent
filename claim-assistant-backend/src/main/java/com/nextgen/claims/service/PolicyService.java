@@ -1,5 +1,6 @@
 package com.nextgen.claims.service;
 
+import com.nextgen.claims.dto.PolicyCreateRequest;
 import com.nextgen.claims.dto.PolicyLookupResponse;
 import com.nextgen.claims.model.Policy;
 import com.nextgen.claims.repository.PolicyRepository;
@@ -22,5 +23,20 @@ public class PolicyService {
                 .claimType(policy.getClaimType())
                 .policyholderName(policy.getPolicyholderName())
                 .build();
+    }
+
+    public Policy create(PolicyCreateRequest request) {
+        Policy policy = Policy.builder()
+                .policyNumber(request.getPolicyNumber())
+                .customerId(request.getCustomerId())
+                .claimType(request.getClaimType())
+                .policyholderName(request.getPolicyholderName())
+                .active(true)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .sumInsured(request.getSumInsured())
+                .build();
+
+        return policyRepository.save(policy);
     }
 }

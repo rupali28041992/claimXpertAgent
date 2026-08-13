@@ -28,7 +28,7 @@ Java or GoRules decision graphs — never the model.
 | JDK | 21 | `java -version` |
 | Maven | 3.9+ | `mvn -version` |
 | MongoDB | running on `localhost:27017` | see below |
-| Ollama | running on `localhost:11434`, with `llama3` and `nomic-embed-text` pulled | see below |
+| Ollama | running on `localhost:11434`, with `qwen3.5:9b` and `bge-m3` pulled | see below |
 
 ### MongoDB
 
@@ -44,8 +44,8 @@ below) before `ValidationAgent` has anything to retrieve.
 ### Ollama
 
 ```powershell
-ollama pull llama3
-ollama pull nomic-embed-text
+ollama pull qwen3.5:9b
+ollama pull bge-m3
 ollama serve
 ```
 
@@ -96,12 +96,31 @@ All in `src/main/resources/application.yml`:
 | Method | Path | Purpose | AI / RAG? |
 |---|---|---|---|
 | `GET` | `/api/claims/policy/{policyNumber}` | Resolve `customerId`/`claimType` from a customer-typed policy number | No — Mongo lookup |
+| `POST` | `/api/policies` | Add Policy screen - save a new policy record | No |
 | `POST` | `/api/claims/suggest-type` | Free text → suggested `claimType`/`claimReason` | AI, no RAG |
 | `GET` | `/api/claims/config/{claimType}` | Questions + required documents for a claim type | No — GoRules lookup |
 | `POST` | `/api/claims/submit` | Submit a full claim (multipart: `claim` JSON part + `files` parts) | AI + RAG, once per uploaded file |
 | `GET` | `/api/claims/{claimId}` | Fetch a claim (for status tracking) | No |
 | `POST` | `/api/review/{claimId}/approve` | Adjuster approves an `UNDER_REVIEW` claim | No |
 | `POST` | `/api/review/{claimId}/reject` | Adjuster rejects, with a reason | No |
+
+### `POST /api/policies`
+
+Request body (`PolicyCreateRequest`):
+```json
+{
+  "policyNumber": "POL-2024-00123",
+  "customerId": "cust_1",
+  "claimType": "LIFE",
+  "policyholderName": "Rajesh Kumar",
+  "sumInsured": 2500000,
+  "startDate": "2022-01-15T00:00:00Z",
+  "endDate": "2032-01-14T00:00:00Z"
+}
+```
+Saves a `Policy` document (`active` defaults to `true`). Used by the
+frontend's "Add Policy" screen so a policy exists before a customer files
+a claim against it via `GET /api/claims/policy/{policyNumber}`.
 
 ### `POST /api/claims/submit`
 

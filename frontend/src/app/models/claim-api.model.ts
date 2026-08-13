@@ -31,3 +31,17 @@ export interface ClaimSubmitResponse {
   status: string | null;
   fileErrors: string[] | null;
 }
+
+export interface PolicyCreateRequest {
+  policyNumber: string;
+  customerId: string;
+  claimType: string;
+  policyholderName: string;
+  sumInsured: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface PolicyRecord extends PolicyCreateRequest {
+  active: boolean;
+}
