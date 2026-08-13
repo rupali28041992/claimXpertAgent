@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "POL-2024-00123",
+    "customerId": "cust_1",
+    "claimType": "LIFE",
+    "policyholderName": "Rajesh Kumar",
+    "active": true,
+    "startDate": { "$date": "2022-01-15T00:00:00Z" },
+    "endDate": { "$date": "2032-01-14T00:00:00Z" },
+    "sumInsured": 2500000
+  },
+  {
+    "_id": "POL-2024-00456",
+    "customerId": "cust_2",
+    "claimType": "MEDICAL",
+    "policyholderName": "Anita Sharma",
+    "active": true,
+    "startDate": { "$date": "2025-04-01T00:00:00Z" },
+    "endDate": { "$date": "2026-03-31T00:00:00Z" },
+    "sumInsured": 500000
+  },
+  {
+    "_id": "POL-2024-00789",
+    "customerId": "cust_3",
+    "claimType": "MOTOR",
+    "policyholderName": "Vikram Singh",
+    "active": true,
+    "startDate": { "$date": "2025-11-10T00:00:00Z" },
+    "endDate": { "$date": "2026-11-09T00:00:00Z" },
+    "sumInsured": 800000
+  },
+  {
+    "_id": "POL-2024-01011",
+    "customerId": "cust_4",
+    "claimType": "TRAVEL",
+    "policyholderName": "Priya Menon",
+    "active": true,
+    "startDate": { "$date": "2026-07-01T00:00:00Z" },
+    "endDate": { "$date": "2026-07-20T00:00:00Z" },
+    "sumInsured": 100000
+  }
+]

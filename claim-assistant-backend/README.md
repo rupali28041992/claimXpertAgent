@@ -285,29 +285,31 @@ or `mongosh`, one document per policy clause:
 
 `GET /api/claims/policy/{policyNumber}` (Screen 1's policy-number lookup)
 reads from this collection. Like `policy_clause_vectors`, nothing seeds it
-automatically - insert test policies via `mongosh`:
+automatically. A ready-to-import seed file with one policy per claim type
+is at `src/main/resources/seed/policies.json`.
+
+Import it with `mongoimport` (jsonArray mode, since the file is a JSON
+array rather than one document per line):
+```powershell
+mongoimport --uri="mongodb://localhost:27017/claims_assistant" `
+  --collection=policies --file="src/main/resources/seed/policies.json" --jsonArray
+```
+
+Or paste its contents into MongoDB Compass's "Import Data" dialog on the
+`claims_assistant.policies` collection (create the collection first if it
+doesn't exist), or copy individual documents into `mongosh`:
 ```javascript
-db.policies.insertMany([
-  { _id: "POL-2024-00123", customerId: "cust_1", claimType: "LIFE",
-    policyholderName: "Rajesh Kumar", active: true,
-    startDate: ISODate("2022-01-15T00:00:00Z"), endDate: ISODate("2032-01-14T00:00:00Z"),
-    sumInsured: 2500000 },
-  { _id: "POL-2024-00456", customerId: "cust_2", claimType: "MEDICAL",
-    policyholderName: "Anita Sharma", active: true,
-    startDate: ISODate("2025-04-01T00:00:00Z"), endDate: ISODate("2026-03-31T00:00:00Z"),
-    sumInsured: 500000 },
-  { _id: "POL-2024-00789", customerId: "cust_3", claimType: "MOTOR",
-    policyholderName: "Vikram Singh", active: true,
-    startDate: ISODate("2025-11-10T00:00:00Z"), endDate: ISODate("2026-11-09T00:00:00Z"),
-    sumInsured: 800000 },
-  { _id: "POL-2024-01011", customerId: "cust_4", claimType: "TRAVEL",
-    policyholderName: "Priya Menon", active: true,
-    startDate: ISODate("2026-07-01T00:00:00Z"), endDate: ISODate("2026-07-20T00:00:00Z"),
-    sumInsured: 100000 }
-]);
+db.policies.insertOne({
+  _id: "POL-2024-00123", customerId: "cust_1", claimType: "LIFE",
+  policyholderName: "Rajesh Kumar", active: true,
+  startDate: ISODate("2022-01-15T00:00:00Z"), endDate: ISODate("2032-01-14T00:00:00Z"),
+  sumInsured: 2500000
+});
 ```
 `_id` is used directly since `Policy.policyNumber` is mapped with `@Id`,
-same as `Claim.claimId`.
+same as `Claim.claimId`. Test policy numbers available after seeding:
+`POL-2024-00123` (LIFE), `POL-2024-00456` (MEDICAL), `POL-2024-00789`
+(MOTOR), `POL-2024-01011` (TRAVEL).
 
 ## GoRules — business rules as editable JSON, not Java
 
