@@ -7,6 +7,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormField } from '../../models/form-schema.model';
 import { ClaimsService, DocumentCategory, QuestionnaireState } from '../../services/claims.service';
+import { PolicyLookupResponse } from '../../models/claim-api.model';
+import { ClaimSubmitResponse } from '../../models/investigation.model';
 
 const OTHERS_DOC: DocumentCategory = {
   type: 'Others',
@@ -76,9 +78,6 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   policy: PolicyLookupResponse | null = null;
   isResolvingPolicy = false;
   policyLookupError: string | null = null;
-
-  isSubmitting = false;
-  submitError: string | null = null;
   submitResult: ClaimSubmitResponse | null = null;
 
   /** Maps a dynamically-generated file field id (e.g. "doc_0") back to the document name required by the backend. */
