@@ -2,10 +2,11 @@ import {
   Component, OnInit, AfterViewChecked,
   ElementRef, ViewChild, ChangeDetectorRef
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormSchema, FormField, FieldCondition } from '../../models/form-schema.model';
+import { ClaimAnswerPayload, ClaimSubmitResponse, ClaimTypeConfig, PolicyLookupResponse } from '../../models/claim-api.model';
+import { ClaimApiService } from '../../services/claim-api.service';
 
 @Component({
   selector: 'app-chat-portal',
@@ -22,37 +23,51 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   answeredFields: { field: FormField; displayValue: string }[] = [];
   currentField: FormField | null = null;
   isSubmitted = false;
-  claimRef = '';
   selectedFiles: { [fieldId: string]: File[] } = {};
   isLoading = true;
   today = new Date().toISOString().split('T')[0];
   private shouldScroll = false;
 
+  policy: PolicyLookupResponse | null = null;
+  isResolvingPolicy = false;
+  policyLookupError: string | null = null;
+
+  isSubmitting = false;
+  submitError: string | null = null;
+  submitResult: ClaimSubmitResponse | null = null;
+
+  /** Maps a dynamically-generated file field id (e.g. "doc_0") back to the document name required by the backend. */
+  private documentLabels: { [fieldId: string]: string } = {};
+
   constructor(
-    private http: HttpClient,
+    private claimApi: ClaimApiService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.http.get<FormSchema>('/assets/form-schema.json').subscribe({
-      next: schema => {
-        this.schema = schema;
-        const controls: Record<string, any> = {};
-        schema.fields.forEach(f => {
-          controls[f.id] = [null, f.required !== false ? Validators.required : []];
-        });
-        this.form = this.fb.group(controls);
-        this.isLoading = false;
-        this.currentField = this.getNextField();
-        this.shouldScroll = true;
-        this.cdr.detectChanges();
-      },
-      error: err => {
-        console.error('Failed to load form schema', err);
-        this.isLoading = false;
-      }
+    // Screen 1's only fixed question: the policy number. Everything after it
+    // (claim type's questions + required documents) is fetched from the
+    // backend once the policy is resolved - see resolvePolicy().
+    this.schema = {
+      id: 'insurance-claim',
+      title: 'Insurance Claim Filing',
+      fields: [
+        {
+          id: 'policy_number',
+          type: 'text',
+          label: "Welcome! I'm your claims assistant. Let's get started — what is your policy number?",
+          required: true,
+          placeholder: 'e.g. POL-2024-00123'
+        }
+      ]
+    };
+    this.form = this.fb.group({
+      policy_number: [null, Validators.required]
     });
+    this.isLoading = false;
+    this.currentField = this.getNextField();
+    this.shouldScroll = true;
   }
 
   ngAfterViewChecked(): void {
@@ -107,6 +122,11 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
 
     // Drop any answers whose showIf is no longer satisfied (e.g. AUTO fields after switching to HEALTH)
     this.pruneInvalidAnsweredFields();
+
+    if (field.id === 'policy_number') {
+      this.resolvePolicy(value);
+      return;
+    }
 
     this.currentField = this.getNextField();
     this.shouldScroll = true;
@@ -163,11 +183,130 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
     this.cdr.detectChanges();
   }
 
-  onSubmit(): void {
-    this.claimRef = Math.random().toString(36).slice(2, 8).toUpperCase();
-    this.isSubmitted = true;
+  // ── Policy resolution (Screen 1 → backend) ───────────────────
+
+  private resolvePolicy(policyNumber: string): void {
+    this.policyLookupError = null;
+    this.isResolvingPolicy = true;
     this.currentField = null;
+    this.cdr.detectChanges();
+
+    this.claimApi.lookupPolicy(policyNumber).subscribe({
+      next: policy => {
+        this.policy = policy;
+        this.claimApi.getConfig(policy.claimType).subscribe({
+          next: config => {
+            this.appendDynamicFields(config);
+            this.isResolvingPolicy = false;
+            this.currentField = this.getNextField();
+            this.shouldScroll = true;
+            this.cdr.detectChanges();
+          },
+          error: () => this.failPolicyResolution('Could not load the claim form for this policy. Please try again.')
+        });
+      },
+      error: () => this.failPolicyResolution('We could not find a policy with that number. Please check and try again.')
+    });
+  }
+
+  private failPolicyResolution(message: string): void {
+    this.isResolvingPolicy = false;
+    this.policyLookupError = message;
+    this.answeredFields = this.answeredFields.filter(a => a.field.id !== 'policy_number');
+    this.currentField = this.schema!.fields.find(f => f.id === 'policy_number') || null;
     this.shouldScroll = true;
+    this.cdr.detectChanges();
+  }
+
+  private appendDynamicFields(config: ClaimTypeConfig): void {
+    const questionFields: FormField[] = config.questions.map(q => ({
+      id: q.questionId,
+      type: this.mapFieldType(q.fieldType),
+      label: q.questionText,
+      required: true
+    }));
+
+    const documentFields: FormField[] = config.requiredDocuments.map((docName, idx) => {
+      const id = `doc_${idx}`;
+      this.documentLabels[id] = docName;
+      this.selectedFiles[id] = [];
+      return {
+        id,
+        type: 'file',
+        label: `Please upload: ${docName}`,
+        required: true,
+        accept: '.jpg,.jpeg,.png,.pdf,.doc,.docx',
+        multiple: false
+      };
+    });
+
+    const commentsField: FormField = {
+      id: 'additional_comments',
+      type: 'textarea',
+      label: "Any additional comments or information you'd like to add? (Optional)",
+      required: false,
+      placeholder: 'Add any extra details, special circumstances, or notes for the claims team...'
+    };
+
+    const newFields = [...questionFields, ...documentFields, commentsField];
+    this.schema!.fields.push(...newFields);
+    newFields.forEach(f => {
+      this.form.addControl(f.id, this.fb.control(null, f.required !== false ? Validators.required : []));
+    });
+  }
+
+  // Backend dropdown questions don't carry an options list yet, so they're rendered as free text for now.
+  private mapFieldType(backendFieldType: string): FormField['type'] {
+    return backendFieldType === 'date' ? 'date' : 'text';
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+
+  onSubmit(): void {
+    if (!this.policy || !this.schema) return;
+
+    const answers: ClaimAnswerPayload[] = this.schema.fields
+      .filter(f => f.type !== 'file' && f.id !== 'policy_number' && f.id !== 'additional_comments')
+      .map(f => ({
+        questionId: f.id,
+        questionText: f.label,
+        answerText: String(this.form.get(f.id)?.value ?? '')
+      }));
+
+    const files: File[] = Object.values(this.selectedFiles).flat();
+
+    const claim = {
+      customerId: this.policy.customerId,
+      policyId: this.policy.policyId,
+      claimType: this.policy.claimType,
+      claimReason: '',
+      freeText: this.form.get('additional_comments')?.value ?? '',
+      answers
+    };
+
+    this.isSubmitting = true;
+    this.submitError = null;
+
+    this.claimApi.submit(claim, files).subscribe({
+      next: response => {
+        this.isSubmitting = false;
+        if (response.fileErrors && response.fileErrors.length) {
+          this.submitError = response.fileErrors.join('; ');
+          this.cdr.detectChanges();
+          return;
+        }
+        this.submitResult = response;
+        this.isSubmitted = true;
+        this.currentField = null;
+        this.shouldScroll = true;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isSubmitting = false;
+        this.submitError = 'Something went wrong submitting your claim. Please try again.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // ── Display helpers ──────────────────────────────────────────
@@ -189,7 +328,7 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   }
 
   isReadyToSubmit(): boolean {
-    return !!this.schema && this.currentField === null && !this.isSubmitted;
+    return !!this.schema && this.currentField === null && !this.isSubmitted && !this.isResolvingPolicy;
   }
 
   // Merges answered fields and the active field in schema order so they render

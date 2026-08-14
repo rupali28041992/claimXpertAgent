@@ -1,1 +1,42 @@
-<app-chat-portal></app-chat-portal>
+<!-- ══ PAGE HEADER ══════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="page-header-inner">
+    <div class="page-logo">
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#2a69ac"/>
+      </svg>
+      <span>InsureCo</span>
+    </div>
+    <nav class="page-nav">
+      <a href="#">Home</a>
+      <a routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }">File Claim</a>
+      <a routerLink="/add-policy" routerLinkActive="nav-active">Add Policy</a>
+      <a href="#">My Claims</a>
+      <a href="#">Support</a>
+    </nav>
+    <div class="page-user">
+      <div class="user-dot"></div>
+      <span>Guest</span>
+    </div>
+  </div>
+</header>
+
+<router-outlet></router-outlet>
+
+<!-- ══ PAGE FOOTER ══════════════════════════════════════════ -->
+<footer class="page-footer">
+  <div class="page-footer-inner">
+    <div class="footer-brand">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#94a3b8"/>
+      </svg>
+      <span>InsureCo</span>
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Contact Us</a>
+    </div>
+    <div class="footer-copy">© 2026 InsureCo. All rights reserved.</div>
+  </div>
+</footer>

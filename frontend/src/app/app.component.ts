@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { ChatPortalComponent } from './components/chat-portal/chat-portal.component';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ChatPortalComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
