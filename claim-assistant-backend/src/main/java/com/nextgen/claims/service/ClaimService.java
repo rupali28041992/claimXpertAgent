@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -64,8 +65,14 @@ public class ClaimService {
                     request.getAnswers()
             );
 
+            // Use the user-selected document category; fall back to filename if not provided
+            Map<String, String> docTypeMap = request.getFileDocumentTypes();
+            String docType = (docTypeMap != null && docTypeMap.containsKey(file.getOriginalFilename()))
+                    ? docTypeMap.get(file.getOriginalFilename())
+                    : file.getOriginalFilename();
+
             documents.add(ClaimDocument.builder()
-                    .docType(file.getOriginalFilename())
+                    .docType(docType)
                     .fileRef(fileRef)
                     .ocrText(extraction.text())
                     .extractedFields(extraction.fields())

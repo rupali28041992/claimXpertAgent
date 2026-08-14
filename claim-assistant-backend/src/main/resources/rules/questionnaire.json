@@ -1,0 +1,282 @@
+{
+  "contentType": "graph",
+  "edges": [
+    {
+      "id": "_KgBKc7c",
+      "sourceId": "l6ciqdDn",
+      "targetId": "dSublrUB"
+    },
+    {
+      "id": "MojoJxcl",
+      "sourceId": "h8h2cjOu",
+      "targetId": "pEN0_0LW"
+    },
+    {
+      "id": "6HUcdcHN",
+      "sourceId": "lftvGaY5",
+      "targetId": "pEN0_0LW"
+    },
+    {
+      "id": "Ag4tMN6J",
+      "sourceId": "z5nPVzM0",
+      "targetId": "pEN0_0LW"
+    },
+    {
+      "id": "WM6dB9rW",
+      "sourceId": "7QHt3ONS",
+      "targetId": "pEN0_0LW"
+    },
+    {
+      "id": "ZIPV2c4I",
+      "sourceId": "dHo4oldR",
+      "targetId": "pEN0_0LW"
+    },
+    {
+      "id": "bUb5G9aQ",
+      "sourceId": "pEN0_0LW",
+      "targetId": "plm6LuKw"
+    },
+    {
+      "id": "Xq9rT2mK",
+      "sourceId": "plm6LuKw",
+      "targetId": "outputNode-1"
+    },
+    {
+      "id": "5JV7Q4mV",
+      "sourceId": "dSublrUB",
+      "targetId": "h8h2cjOu",
+      "sourceHandle": "CMXSEg_b"
+    },
+    {
+      "id": "yt_qilcg",
+      "sourceId": "dSublrUB",
+      "targetId": "lftvGaY5",
+      "sourceHandle": "wVQi0hF6"
+    },
+    {
+      "id": "1cViRvvU",
+      "sourceId": "dSublrUB",
+      "targetId": "z5nPVzM0",
+      "sourceHandle": "Hyk60uSv"
+    },
+    {
+      "id": "MzxHLHEn",
+      "sourceId": "dSublrUB",
+      "targetId": "7QHt3ONS",
+      "sourceHandle": "7Fg_mdHs"
+    },
+    {
+      "id": "AErnC3i-",
+      "sourceId": "dSublrUB",
+      "targetId": "dHo4oldR",
+      "sourceHandle": "xKSgcL0N"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "l6ciqdDn",
+      "name": "ClaimIntake",
+      "type": "inputNode",
+      "content": {
+        "schema": "{\"type\":\"object\",\"properties\":{\"policyType\":{\"type\":\"string\"},\"incidentType\":{\"type\":\"string\"},\"injuryInvolved\":{\"type\":[\"boolean\",\"null\"]},\"thirdPartyInvolved\":{\"type\":[\"boolean\",\"null\"]},\"policeReportFiled\":{\"type\":[\"boolean\",\"null\"]}},\"required\":[\"policyType\",\"incidentType\"]}"
+      },
+      "position": { "x": 100, "y": 0 }
+    },
+    {
+      "id": "dSublrUB",
+      "name": "routeByPolicyType",
+      "type": "switchNode",
+      "content": {
+        "hitPolicy": "first",
+        "statements": [
+          { "id": "CMXSEg_b", "condition": "policyType == \"auto\""   },
+          { "id": "wVQi0hF6", "condition": "policyType == \"home\""   },
+          { "id": "Hyk60uSv", "condition": "policyType == \"health\"" },
+          { "id": "7Fg_mdHs", "condition": "policyType == \"travel\"" },
+          { "id": "xKSgcL0N", "condition": ""                         }
+        ]
+      },
+      "position": { "x": 400, "y": 0 }
+    },
+    {
+      "id": "h8h2cjOu",
+      "name": "autoClaim",
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "passThrough": true,
+        "executionMode": "single",
+        "inputs": [
+          { "id": "8efe560b-3b27-402e-b27b-676f1c58c7f7", "name": "Incident",        "field": "incidentType"   },
+          { "id": "ea82c833-2aa2-4d68-beb1-d908badc5890", "name": "Injury involved", "field": "injuryInvolved" }
+        ],
+        "outputs": [
+          { "id": "b6fbb090-7d5b-40da-82a9-e8390c33cd8a", "name": "Claim type",   "type": "claimType",   "field": "claimType"   },
+          { "id": "ffc84d16-07f2-48a5-b614-de0f864fffe1", "name": "Claim reason", "type": "claimReason", "field": "claimReason" }
+        ],
+        "rules": [
+          { "_id": "a008c5c5-f127-40fd-bc3a-2bf829890285", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"collision\"",     "ea82c833-2aa2-4d68-beb1-d908badc5890": "true", "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"bodily_injury\"",   "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"collision\""    },
+          { "_id": "2d3ee027-b86b-4994-9049-83f40d0e716b", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"collision\"",     "ea82c833-2aa2-4d68-beb1-d908badc5890": "",     "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"property_damage\"", "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"collision\""    },
+          { "_id": "63f60ea1-8dbf-4cf5-b4b4-c3ffc817b23a", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"theft\"",        "ea82c833-2aa2-4d68-beb1-d908badc5890": "",     "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"theft\"",          "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"theft\""        },
+          { "_id": "e556f2dd-28ac-4db0-aef1-c3b14fbccd9f", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"fire\"",         "ea82c833-2aa2-4d68-beb1-d908badc5890": "",     "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"property_damage\"", "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"fire\""         },
+          { "_id": "8f700100-7316-4340-8256-c3909344dc34", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"vandalism\"",    "ea82c833-2aa2-4d68-beb1-d908badc5890": "",     "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"property_damage\"", "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"vandalism\""    },
+          { "_id": "87885ba7-ad7a-4958-a665-90e53f587c1d", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "\"weather_damage\"","ea82c833-2aa2-4d68-beb1-d908badc5890": "",    "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"property_damage\"", "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"storm_damage\""  },
+          { "_id": "419cb637-5f6f-4194-9a74-ecf087c717c0", "8efe560b-3b27-402e-b27b-676f1c58c7f7": "",                "ea82c833-2aa2-4d68-beb1-d908badc5890": "",     "b6fbb090-7d5b-40da-82a9-e8390c33cd8a": "\"other\"",          "ffc84d16-07f2-48a5-b614-de0f864fffe1": "\"other\""        }
+        ]
+      },
+      "position": { "x": 700, "y": -164 }
+    },
+    {
+      "id": "lftvGaY5",
+      "name": "homeClaim",
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "passThrough": true,
+        "executionMode": "single",
+        "inputs": [
+          { "id": "ad7ed62d-74d4-444d-8be9-1bab840142f5", "name": "Incident", "field": "incidentType" }
+        ],
+        "outputs": [
+          { "id": "202a0b16-6071-4635-940e-c93702d0d3fc", "name": "Claim type",   "type": "claimType",   "field": "claimType"   },
+          { "id": "cd38cc1e-5e6c-4059-b485-26831021cb24", "name": "Claim reason", "type": "claimReason", "field": "claimReason" }
+        ],
+        "rules": [
+          { "_id": "c73640ed-00ea-46f6-915f-7dfd7b9e73cc", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"fire\"",            "202a0b16-6071-4635-940e-c93702d0d3fc": "\"property_damage\"", "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"fire\""                  },
+          { "_id": "9be5339e-3b67-4c8e-bfc8-4c8c6ddfa3e3", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"water_damage\"",    "202a0b16-6071-4635-940e-c93702d0d3fc": "\"property_damage\"", "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"water_damage\""          },
+          { "_id": "9f68b195-bc4b-42b2-8d14-9da9ebc96006", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"theft\"",           "202a0b16-6071-4635-940e-c93702d0d3fc": "\"theft\"",           "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"theft\""                  },
+          { "_id": "aec001fa-a3f5-4b48-9d15-cb4cc1855941", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"storm_damage\"",    "202a0b16-6071-4635-940e-c93702d0d3fc": "\"property_damage\"", "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"storm_damage\""          },
+          { "_id": "258c230f-bb10-4eb4-b7a9-99a6274a7f9b", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"vandalism\"",      "202a0b16-6071-4635-940e-c93702d0d3fc": "\"property_damage\"", "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"vandalism\""             },
+          { "_id": "95a9910e-08f3-43b7-9dc5-99556f1cde70", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "\"liability_injury\"","202a0b16-6071-4635-940e-c93702d0d3fc": "\"liability\"",        "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"third_party_liability\""  },
+          { "_id": "47417cc8-4bb3-489a-a11e-331d4e1faaad", "ad7ed62d-74d4-444d-8be9-1bab840142f5": "",                   "202a0b16-6071-4635-940e-c93702d0d3fc": "\"other\"",           "cd38cc1e-5e6c-4059-b485-26831021cb24": "\"other\""                  }
+        ]
+      },
+      "position": { "x": 700, "y": -82 }
+    },
+    {
+      "id": "z5nPVzM0",
+      "name": "healthClaim",
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "passThrough": true,
+        "executionMode": "single",
+        "inputs": [
+          { "id": "3dd0dedc-df4b-4dbb-bf4e-85c7af24cbf6", "name": "Incident", "field": "incidentType" }
+        ],
+        "outputs": [
+          { "id": "89f6aadf-03b8-40e4-a860-8d771accf00c", "name": "Claim type",   "type": "claimType",   "field": "claimType"   },
+          { "id": "933c31df-9b33-46ac-a4cc-3b5f1eba37a0", "name": "Claim reason", "type": "claimReason", "field": "claimReason" }
+        ],
+        "rules": [
+          { "_id": "e6eb5762-de66-4231-9357-298758bc166e", "3dd0dedc-df4b-4dbb-bf4e-85c7af24cbf6": "\"illness\"",        "89f6aadf-03b8-40e4-a860-8d771accf00c": "\"medical\"", "933c31df-9b33-46ac-a4cc-3b5f1eba37a0": "\"illness\""        },
+          { "_id": "e0be5190-0d57-4c52-92d3-9493f58dee87", "3dd0dedc-df4b-4dbb-bf4e-85c7af24cbf6": "\"injury\"",        "89f6aadf-03b8-40e4-a860-8d771accf00c": "\"medical\"", "933c31df-9b33-46ac-a4cc-3b5f1eba37a0": "\"injury\""         },
+          { "_id": "4bcd8b5d-4802-407e-8d1c-ef0e1bc388f9", "3dd0dedc-df4b-4dbb-bf4e-85c7af24cbf6": "\"hospitalization\"","89f6aadf-03b8-40e4-a860-8d771accf00c": "\"medical\"", "933c31df-9b33-46ac-a4cc-3b5f1eba37a0": "\"hospitalization\"" },
+          { "_id": "e469e50a-055a-436e-839f-71b4dc9cf1de", "3dd0dedc-df4b-4dbb-bf4e-85c7af24cbf6": "",                  "89f6aadf-03b8-40e4-a860-8d771accf00c": "\"other\"",   "933c31df-9b33-46ac-a4cc-3b5f1eba37a0": "\"other\""          }
+        ]
+      },
+      "position": { "x": 700, "y": 0 }
+    },
+    {
+      "id": "7QHt3ONS",
+      "name": "travelClaim",
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "passThrough": true,
+        "executionMode": "single",
+        "inputs": [
+          { "id": "f9c65f8b-f442-4715-b65c-c80466dd0a9e", "name": "Incident", "field": "incidentType" }
+        ],
+        "outputs": [
+          { "id": "9f792213-2d51-49a9-b936-c853069ad534", "name": "Claim type",   "type": "claimType",   "field": "claimType"   },
+          { "id": "0c975fad-1353-4069-ab12-6e1144acd457", "name": "Claim reason", "type": "claimReason", "field": "claimReason" }
+        ],
+        "rules": [
+          { "_id": "c32c1be5-23d0-45e7-97af-af7e2fd3a5d1", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "\"trip_cancellation\"","9f792213-2d51-49a9-b936-c853069ad534": "\"trip_disruption\"", "0c975fad-1353-4069-ab12-6e1144acd457": "\"trip_cancellation\""   },
+          { "_id": "745f8622-d41f-47e8-8af1-f6d60d8edb31", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "\"trip_delay\"",       "9f792213-2d51-49a9-b936-c853069ad534": "\"trip_disruption\"", "0c975fad-1353-4069-ab12-6e1144acd457": "\"trip_delay\""           },
+          { "_id": "d00d1bed-eb07-4a16-82a0-2926b5def7e6", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "\"lost_baggage\"",     "9f792213-2d51-49a9-b936-c853069ad534": "\"trip_disruption\"", "0c975fad-1353-4069-ab12-6e1144acd457": "\"lost_baggage\""         },
+          { "_id": "56954e8b-47b9-4e94-a134-7d6031365555", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "\"illness\"",         "9f792213-2d51-49a9-b936-c853069ad534": "\"medical\"",         "0c975fad-1353-4069-ab12-6e1144acd457": "\"medical_emergency\""    },
+          { "_id": "23008904-d223-40bf-85b6-2d2ec99c0c9e", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "\"other\"",           "9f792213-2d51-49a9-b936-c853069ad534": "\"trip_disruption\"", "0c975fad-1353-4069-ab12-6e1144acd457": "\"lost_documents\""       },
+          { "_id": "b59f5054-261f-4928-9ca0-ed2086a20b88", "f9c65f8b-f442-4715-b65c-c80466dd0a9e": "",                    "9f792213-2d51-49a9-b936-c853069ad534": "\"other\"",           "0c975fad-1353-4069-ab12-6e1144acd457": "\"\""                     }
+        ]
+      },
+      "position": { "x": 700, "y": 82 }
+    },
+    {
+      "id": "dHo4oldR",
+      "name": "unmatchedPolicyType",
+      "type": "expressionNode",
+      "content": {
+        "passThrough": true,
+        "executionMode": "single",
+        "expressions": [
+          { "id": "x0Donqr9", "key": "claimType",   "value": "\"other\"" },
+          { "id": "80yLcXE5", "key": "claimReason",  "value": "\"other\"" }
+        ]
+      },
+      "position": { "x": 700, "y": 164 }
+    },
+    {
+      "id": "pEN0_0LW",
+      "name": "documentsLookup",
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "passThrough": true,
+        "executionMode": "single",
+        "inputs": [
+          { "id": "f58db2ca-888c-4d78-9fbf-f5f884f7fada", "name": "Claim reason", "field": "claimReason" }
+        ],
+        "outputs": [
+          { "id": "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb", "name": "baseDocuments", "type": "docType[]", "field": "baseDocuments" }
+        ],
+        "rules": [
+          { "_id": "e6c4e750-5a20-4a05-b068-4a46930e01f2", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"collision\"",            "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"photo_evidence\",\"repair_estimate\"]"          },
+          { "_id": "dd67023c-08b9-4ab3-8fa9-3c1abb603c50", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"theft\"",                "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"police_report\",\"proof_of_ownership\"]"         },
+          { "_id": "99b56980-3779-4205-8fb3-9421874340a6", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"fire\"",                 "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"photo_evidence\",\"repair_estimate\"]"          },
+          { "_id": "8fd020d5-6a7c-431a-85d7-7d5a394acfa5", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"vandalism\"",            "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"police_report\",\"photo_evidence\"]"            },
+          { "_id": "32d49971-ed93-400f-aeaf-74662b06c43d", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"storm_damage\"",         "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"photo_evidence\",\"repair_estimate\"]"          },
+          { "_id": "e0211458-5a91-478c-9b0c-ec6eb8a0d373", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"water_damage\"",         "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"photo_evidence\",\"repair_estimate\"]"          },
+          { "_id": "90838a83-6b26-4071-bf35-5b0e311bbae0", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"third_party_liability\"", "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"liability_statement\",\"photo_evidence\"]"    },
+          { "_id": "47ce8920-a1d6-4adc-a1ba-3952697de5f6", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"illness\"",              "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"medical_records\"]"                            },
+          { "_id": "9b52e01d-598c-4b59-82dd-f1e2b2dfb4b7", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"injury\"",              "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"medical_records\"]"                            },
+          { "_id": "d32da542-1715-4283-b3da-25960cee6dd0", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"hospitalization\"",      "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"medical_records\",\"hospital_discharge_summary\"]"},
+          { "_id": "07d6c9cf-afea-48f5-9e8c-d036a61aefcd", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"trip_cancellation\"",    "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"travel_itinerary\",\"receipts\"]"               },
+          { "_id": "578873d8-2f25-47af-b873-ca9be22d51e7", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"trip_delay\"",           "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"travel_itinerary\",\"receipts\"]"               },
+          { "_id": "9455d8e0-ea34-4319-9ebf-243e70900195", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "\"lost_baggage\"",         "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\",\"travel_itinerary\",\"receipts\"]"               },
+          { "_id": "b29595bb-1310-4d9e-8668-243a32c31889", "f58db2ca-888c-4d78-9fbf-f5f884f7fada": "",                        "e2e9406a-c5ae-41f3-a8f6-a82acc6206fb": "[\"claim_form\"]"                                                 }
+        ]
+      },
+      "position": { "x": 1000, "y": 0 }
+    },
+    {
+      "id": "plm6LuKw",
+      "name": "requiredDocuments",
+      "type": "expressionNode",
+      "content": {
+        "passThrough": true,
+        "executionMode": "single",
+        "expressions": [
+          {
+            "id": "6GWVe7PL",
+            "key": "requiredDocuments",
+            "value": "extraPolice = (policeReportFiled == true and !contains(baseDocuments, \"police_report\")) ? [\"police_report\"] : []; extraMedical = (injuryInvolved == true and !contains(baseDocuments, \"medical_records\")) ? [\"medical_records\"] : []; extraLiability = (thirdPartyInvolved == true and !contains(baseDocuments, \"liability_statement\")) ? [\"liability_statement\"] : []; flatten([baseDocuments, extraPolice, extraMedical, extraLiability])"
+          },
+          {
+            "id": "u3KhuwCc",
+            "key": "baseDocuments",
+            "value": "null"
+          }
+        ]
+      },
+      "position": { "x": 1300, "y": 0 }
+    },
+    {
+      "id": "outputNode-1",
+      "name": "Response",
+      "type": "outputNode",
+      "position": { "x": 1600, "y": 0 }
+    }
+  ]
+}

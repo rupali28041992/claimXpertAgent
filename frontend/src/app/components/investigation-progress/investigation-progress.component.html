@@ -1,0 +1,59 @@
+<div class="investigation-page">
+  <div class="investigation-card">
+
+    <div class="card-header">
+      <div class="header-icon">🔍</div>
+      <h2 class="card-title">AI Claim Analysis</h2>
+      <p class="card-sub">Claim <strong>{{ claimId }}</strong> is being reviewed by our specialist agents</p>
+    </div>
+
+    <div class="orchestrator-label">Claim Orchestrator — running agents in parallel</div>
+
+    <div class="agents-grid">
+      @for (agent of agents; track agent.label) {
+        <div class="agent-card" [class.done]="agent.status === 'done'" [class.has-error]="agent.status === 'error'">
+          <div class="agent-icon-wrap">
+            @if (agent.status === 'running') {
+              <div class="spinner"></div>
+            }
+            @if (agent.status === 'done' && agent.finding) {
+              <span class="status-icon" [class]="verdictClass(agent.finding.verdict)">
+                {{ verdictIcon(agent.finding.verdict) }}
+              </span>
+            }
+            @if (agent.status === 'error') {
+              <span class="status-icon bad">!</span>
+            }
+          </div>
+
+          <div class="agent-body">
+            <div class="agent-name">{{ agent.label }}</div>
+
+            @if (agent.status === 'running') {
+              <div class="agent-desc">{{ agent.description }}</div>
+            }
+
+            @if (agent.status === 'done' && agent.finding) {
+              <div class="verdict-row">
+                <span class="verdict-badge" [class]="verdictClass(agent.finding.verdict)">
+                  {{ agent.finding.verdict }}
+                </span>
+                <span class="confidence-text">{{ (agent.finding.confidenceScore * 100).toFixed(0) }}% confidence</span>
+              </div>
+              <div class="agent-explanation">{{ agent.finding.explanation }}</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (error) {
+      <div class="error-banner">{{ error }}</div>
+    }
+
+    @if (isLoading) {
+      <p class="loading-hint">This typically takes 10–30 seconds on local Ollama…</p>
+    }
+
+  </div>
+</div>

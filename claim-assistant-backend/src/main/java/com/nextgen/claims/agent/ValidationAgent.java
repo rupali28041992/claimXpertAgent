@@ -63,11 +63,18 @@ public class ValidationAgent {
 
                 Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
                 "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(clauseText, ocrText, extractedFields, answersText);
+                """.formatted(clauseText, ocrText, formatMap(extractedFields), answersText);
 
         return chatClient.prompt()
                 .user(prompt)
                 .call()
                 .entity(ValidationResult.class);
+    }
+
+    private String formatMap(Map<String, String> map) {
+        if (map == null || map.isEmpty()) return "(none)";
+        return map.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining(", "));
     }
 }

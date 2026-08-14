@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "id": "input-1",
+      "type": "inputNode",
+      "position": { "x": 100, "y": 240 },
+      "name": "Request"
+    },
+    {
+      "id": "function-1",
+      "type": "functionNode",
+      "position": { "x": 420, "y": 240 },
+      "name": "Question Assembler",
+      "content": "/**\n * Diagnostic question assembler — derives claimType and claimReason\n * from 4 natural-language questions instead of a direct category picker.\n *\n * Flow:\n *   Step 1: Show STEP1_QUESTIONS (what_happened radio)\n *   Step 2: Based on what_happened, load STEP2_BY_TYPE[scenario]:\n *           – scenario-specific reason dropdown\n *           – date field\n *           – location / detail field\n *   Complete: all requiredIds answered → derive claimType + claimReason\n *\n * All data lives in question-definitions.json.  This function never\n * contains claim-type-specific values — edit the JSON to change questions.\n *\n * Input:\n *   answers      – { [questionId]: string }  accumulated user answers\n *   questionDefs – parsed question-definitions.json\n *\n * Output:\n *   questions    – FormField[]   ordered list to render in the UI\n *   isComplete   – boolean\n *   claimType    – string | null  e.g. \"MOTOR\", \"MEDICAL\"\n *   claimReason  – string | null  human-readable reason label\n */\nconst handler = (input) => {\n  const answers     = input.answers || {};\n  const defs        = input.questionDefs || {};\n  const step1       = defs.STEP1_QUESTIONS || [];\n  const step2ByType = defs.STEP2_BY_TYPE   || {};\n\n  // Step 1 — what_happened not yet answered\n  if (!answers.what_happened) {\n    return {\n      questions:   step1,\n      isComplete:  false,\n      claimType:   null,\n      claimReason: null\n    };\n  }\n\n  const scenario = answers.what_happened;\n  const config   = step2ByType[scenario];\n\n  // Guard: unknown scenario (shouldn't happen with valid UI options)\n  if (!config) {\n    return {\n      questions:   step1,\n      isComplete:  false,\n      claimType:   null,\n      claimReason: null\n    };\n  }\n\n  const allQuestions = [...step1, ...(config.questions || [])];\n  const requiredIds  = config.requiredIds || [];\n\n  const isComplete = requiredIds.length > 0 &&\n    requiredIds.every(id => !!answers[id] && answers[id] !== '');\n\n  // Resolve human-readable claimReason from the reason dropdown label\n  let claimReason = null;\n  if (config.reasonField && answers[config.reasonField]) {\n    const reasonQ = (config.questions || []).find(q => q.id === config.reasonField);\n    if (reasonQ && reasonQ.options) {\n      const opt = reasonQ.options.find(o => o.value === answers[config.reasonField]);\n      claimReason = opt ? opt.label : answers[config.reasonField];\n    } else {\n      claimReason = answers[config.reasonField];\n    }\n  }\n\n  return {\n    questions:   allQuestions,\n    isComplete:  isComplete,\n    claimType:   isComplete ? config.claimType : null,\n    claimReason: claimReason\n  };\n};"
+    },
+    {
+      "id": "output-1",
+      "type": "outputNode",
+      "position": { "x": 760, "y": 240 },
+      "name": "Response"
+    }
+  ],
+  "edges": [
+    { "id": "edge-1", "sourceId": "input-1", "type": "edge", "targetId": "function-1" },
+    { "id": "edge-2", "sourceId": "function-1", "type": "edge", "targetId": "output-1" }
+  ]
+}

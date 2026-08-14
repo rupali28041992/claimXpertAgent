@@ -454,9 +454,26 @@ form { display: flex; flex-direction: column; }
 .select-icon { position: absolute; right: 12px; pointer-events: none; }
 .field-textarea { resize: vertical; min-height: 100px; line-height: 1.55; align-self: stretch; }
 
-.date-shell { gap: 0; }
+.date-shell { gap: 0; cursor: pointer; }
 .date-icon { position: absolute; left: 12px; pointer-events: none; z-index: 1; }
-.date-input { padding-left: 36px; }
+
+.date-display-text {
+  flex: 1;
+  padding: 0 12px 0 36px;
+  font-size: 0.875rem;
+  color: $text;
+  line-height: 1;
+  &.date-placeholder { color: #94a3b8; }
+}
+
+.date-picker-trigger {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border: none;
+  pointer-events: none;
+}
 
 .field-hint {
   margin-top: 7px;
@@ -465,26 +482,145 @@ form { display: flex; flex-direction: column; }
   font-style: italic;
 }
 
-// ─── FILE ────────────────────────────────────────────────────
-.file-drop {
+// ─── FILE / MULTI-DOC UPLOADER ───────────────────────────────
+.file-hidden { display: none; }
+
+.doc-uploader {
+  border: 1.5px dashed #93c5fd;
+  border-radius: 10px;
+  background: #f0f7ff;
+  overflow: hidden;
+  transition: border-color .18s, background .18s;
+
+  &.drag-over {
+    border-color: $blue;
+    border-style: solid;
+    background: $blue-bg;
+  }
+}
+
+.doc-drop-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  border: 1.5px dashed #93c5fd;
-  border-radius: 10px;
+  gap: 6px;
   padding: 22px 20px;
-  cursor: pointer;
-  background: #f0f7ff;
   text-align: center;
-  transition: border-color .18s, background .18s;
-
-  &:hover { border-color: $blue; background: $blue-bg; }
 }
 
-.file-hidden { display: none; }
-.file-label { font-size: 0.88rem; font-weight: 600; color: $blue-dark; &.selected { color: #15803d; } }
-.file-types, .file-name { font-size: 0.74rem; color: $muted; }
+.doc-drop-text {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.doc-drop-primary {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: $blue-dark;
+}
+
+.doc-drop-or {
+  font-size: 0.8rem;
+  color: $muted;
+}
+
+.doc-browse-btn {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: $blue;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: $blue-dark; }
+}
+
+.doc-drop-hint {
+  font-size: 0.72rem;
+  color: $muted;
+}
+
+.doc-file-list {
+  border-top: 1px solid #bfdbfe;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background .12s;
+
+  &:hover { background: #f8fafc; }
+}
+
+.doc-file-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+}
+
+.doc-file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.doc-file-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-file-size {
+  font-size: 0.7rem;
+  color: $muted;
+}
+
+.doc-file-remove {
+  background: none;
+  border: none;
+  padding: 4px 5px;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: $font;
+  transition: color .12s, background .12s;
+
+  &:hover { color: #ef4444; background: #fee2e2; }
+}
+
+.doc-add-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $blue;
+  cursor: pointer;
+  border-top: 1px dashed #bfdbfe;
+  transition: background .12s;
+
+  &:hover { background: $blue-bg; }
+}
 
 .file-actions {
   display: flex;
@@ -522,6 +658,202 @@ form { display: flex; flex-direction: column; }
   &:hover { border-color: #94a3b8; color: $text; }
 }
 
+// ─── DOCUMENT CATEGORY UPLOAD ────────────────────────────────
+.doc-upload-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: slideDown .25s ease forwards;
+}
+
+.doc-section-header {
+  margin-bottom: 14px;
+}
+
+.doc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: $text;
+  margin-bottom: 5px;
+}
+
+.doc-count-pill {
+  margin-left: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  padding: 2px 9px;
+  border-radius: 99px;
+}
+
+.doc-section-sub {
+  font-size: 0.8rem;
+  color: $muted;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.doc-cat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-of-type { border-bottom: none; }
+
+  &--others {
+    background: #fafbfc;
+    margin: 0 -24px;
+    padding: 13px 24px;
+    border-top: 1px dashed $border;
+    border-bottom: none;
+  }
+}
+
+.doc-cat-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-cat-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: $text;
+  margin-bottom: 3px;
+}
+
+.doc-cat-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  flex-shrink: 0;
+}
+
+.doc-cat-desc {
+  font-size: 0.75rem;
+  color: $muted;
+  line-height: 1.4;
+  padding-left: 21px; // align with name (bullet width + gap)
+}
+
+.doc-cat-right {
+  flex-shrink: 0;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.doc-cat-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $blue;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 7px;
+  background: $blue-bg;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: #dbeafe;
+    border-color: $blue;
+  }
+}
+
+.doc-cat-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.doc-cat-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.76rem;
+}
+
+.doc-cat-file-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.doc-cat-file-name {
+  flex: 1;
+  font-weight: 600;
+  color: $text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.doc-cat-file-size {
+  color: $muted;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.doc-cat-add-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: $blue;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 5px;
+  transition: background .12s;
+
+  &:hover { background: $blue-bg; }
+}
+
+.doc-required-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 12px;
+}
+
+.doc-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid $border;
+}
+
 // ─── SUBMIT ──────────────────────────────────────────────────
 .submit-zone {
   padding: 22px 24px;
@@ -541,6 +873,54 @@ form { display: flex; flex-direction: column; }
   color: #15803d;
   font-weight: 600;
 }
+
+// ─── SUBMIT-ZONE DOCUMENT UPLOADER ──────────────────────────
+.submit-docs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.submit-docs-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: $text;
+}
+
+.submit-docs-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: $muted;
+  background: #f1f5f9;
+  border: 1px solid $border;
+  padding: 1px 7px;
+  border-radius: 99px;
+  margin-left: 2px;
+}
+
+.submit-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  border-left: 3px solid #ef4444;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .btn-submit {
   display: inline-flex;
@@ -645,6 +1025,92 @@ form { display: flex; flex-direction: column; }
   border-radius: 8px;
   font-size: 0.78rem;
   color: #166534;
+}
+
+// ─── POLICY GATE ─────────────────────────────────────────────
+.policy-gate {
+  padding: 24px;
+  border-bottom: 1px solid $border;
+  animation: slideDown .25s ease forwards;
+}
+
+.policy-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.btn-check-policy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: $font;
+  white-space: nowrap;
+  transition: background .15s;
+  flex-shrink: 0;
+
+  &:hover { background: $blue-dark; }
+  &:disabled { background: #cbd5e1; cursor: not-allowed; }
+}
+
+.policy-not-found {
+  background: #fff8f5;
+  border: 1.5px solid #fca5a5;
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+  padding: 20px 22px;
+  animation: slideDown .2s ease forwards;
+}
+
+.policy-nf-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.policy-nf-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.policy-nf-body {
+  font-size: 0.85rem;
+  color: #7f1d1d;
+  line-height: 1.65;
+  margin: 0 0 12px;
+}
+
+.policy-nf-ref {
+  font-size: 0.74rem;
+  color: #b91c1c;
+  font-family: monospace;
+  background: #fee2e2;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.policy-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 24px;
+  background: $success-bg;
+  border-bottom: 1px solid $success-bdr;
+  font-size: 0.83rem;
+  color: #15803d;
+  font-weight: 600;
+  animation: slideDown .2s ease forwards;
 }
 
 // ─── CARD FOOTER ─────────────────────────────────────────────

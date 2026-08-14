@@ -1,0 +1,344 @@
+{
+  "title": "Claims dictionaries",
+  "blocks": [
+    {
+      "id": "c0aebb7b-a6b0-4010-97d8-385aa48fe0a9",
+      "type": "heading",
+      "props": {
+        "level": 1
+      },
+      "content": [
+        {
+          "text": "Overview",
+          "type": "text",
+          "styles": {}
+        }
+      ]
+    },
+    {
+      "id": "3c753adb-2b37-4926-99cf-278e48adadd0",
+      "type": "paragraph",
+      "props": {},
+      "content": [
+        {
+          "text": "Shared value sets used by the claims questionnaire graph. Defined here so the graph's decision tables get typed, dropdown-editable columns instead of free-text cells.",
+          "type": "text",
+          "styles": {}
+        }
+      ]
+    },
+    {
+      "id": "6a553592-942c-41d5-a44e-0151fc73aae0",
+      "type": "dictionary",
+      "props": {
+        "data": {
+          "name": "policyType",
+          "entries": [
+            {
+              "id": "c85bde6a-6f90-4d62-a511-55ccca0f88d7",
+              "label": "Auto",
+              "value": "auto"
+            },
+            {
+              "id": "30370650-7955-4a97-9a2a-0b1fbabe69ae",
+              "label": "Home",
+              "value": "home"
+            },
+            {
+              "id": "0215871e-1a02-4f81-8e97-40de1f580689",
+              "label": "Health",
+              "value": "health"
+            },
+            {
+              "id": "789b1c85-de3e-461f-99e5-ffa73d004fc7",
+              "label": "Travel",
+              "value": "travel"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3612592f-2458-4cf3-8915-94ac2a329a51",
+      "type": "dictionary",
+      "props": {
+        "data": {
+          "name": "incidentType",
+          "entries": [
+            {
+              "id": "1ecb1214-6ce0-4742-aa5f-8d3fc2123bfe",
+              "label": "Collision",
+              "value": "collision"
+            },
+            {
+              "id": "e481c078-60c4-4d60-9236-8cea3c08674f",
+              "label": "Theft",
+              "value": "theft"
+            },
+            {
+              "id": "c89675fd-9611-4d5c-a725-7242c16803c2",
+              "label": "Fire",
+              "value": "fire"
+            },
+            {
+              "id": "a1c56478-66e9-41ff-9545-6d39f3be5215",
+              "label": "Vandalism",
+              "value": "vandalism"
+            },
+            {
+              "id": "99accc46-367a-43ec-8975-06568b6ec138",
+              "label": "Weather damage",
+              "value": "weather_damage"
+            },
+            {
+              "id": "d11286e7-894e-489d-ab1b-84bc7757f6b9",
+              "label": "Water damage",
+              "value": "water_damage"
+            },
+            {
+              "id": "c046b3ea-7046-45f2-b509-4700742a24cc",
+              "label": "Storm damage",
+              "value": "storm_damage"
+            },
+            {
+              "id": "ce5cf3a3-cdc5-40b1-8d20-a66fec3e21d3",
+              "label": "Injury to another person",
+              "value": "liability_injury"
+            },
+            {
+              "id": "d09e674d-7626-4aa8-a89b-444a4dfff403",
+              "label": "Illness",
+              "value": "illness"
+            },
+            {
+              "id": "a1f97273-d227-4801-8816-f6788ee94e3e",
+              "label": "Injury",
+              "value": "injury"
+            },
+            {
+              "id": "ecbd6cf4-e7d0-4d33-a7c5-fe1052748b63",
+              "label": "Hospitalization",
+              "value": "hospitalization"
+            },
+            {
+              "id": "d76155ab-a8f2-4cf6-b238-30ece0df30d5",
+              "label": "Trip cancellation",
+              "value": "trip_cancellation"
+            },
+            {
+              "id": "7cff499d-be03-442d-bfc3-55df5e4cc611",
+              "label": "Trip delay",
+              "value": "trip_delay"
+            },
+            {
+              "id": "342efd53-2dbf-4028-8a4b-94da8297a81d",
+              "label": "Lost baggage",
+              "value": "lost_baggage"
+            },
+            {
+              "id": "905483d6-a621-4842-a0e0-ba4c5fc7c807",
+              "label": "Medical emergency abroad",
+              "value": "medical_emergency"
+            },
+            {
+              "id": "e03b9608-4807-4644-b0c0-568fbf80b162",
+              "label": "Lost travel documents",
+              "value": "lost_documents"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "9ffa941d-cb97-4d82-9b2a-7f422c3b8558",
+      "type": "dictionary",
+      "props": {
+        "data": {
+          "name": "claimType",
+          "entries": [
+            {
+              "id": "e78335e7-49ed-49ae-83da-d24a81273e12",
+              "label": "Property damage",
+              "value": "property_damage"
+            },
+            {
+              "id": "7ad3072a-2b6d-4e91-b25d-a0e0ee6ad5b5",
+              "label": "Bodily injury",
+              "value": "bodily_injury"
+            },
+            {
+              "id": "39915f51-bbd1-47c7-88ea-77ce70de57fa",
+              "label": "Theft",
+              "value": "theft"
+            },
+            {
+              "id": "df17e8e5-8a49-4554-93db-d04b7d06dedd",
+              "label": "Liability",
+              "value": "liability"
+            },
+            {
+              "id": "ea6abbcd-aa6d-4339-8f84-f0abc09ca3da",
+              "label": "Medical",
+              "value": "medical"
+            },
+            {
+              "id": "6274051a-2193-469d-af9e-045cf3b160c5",
+              "label": "Trip disruption",
+              "value": "trip_disruption"
+            },
+            {
+              "id": "aca6e1d5-da5c-4acf-9c42-7a0ab3d66f72",
+              "label": "Other",
+              "value": "other"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0863bb8b-0ceb-4525-84b4-a62f9ae4127e",
+      "type": "dictionary",
+      "props": {
+        "data": {
+          "name": "claimReason",
+          "entries": [
+            {
+              "id": "a2731b85-fc92-40e7-bfbc-f748d9338963",
+              "label": "Collision",
+              "value": "collision"
+            },
+            {
+              "id": "3b2d16c2-b2bd-4ed5-a4eb-cf0d0ff6c16d",
+              "label": "Theft",
+              "value": "theft"
+            },
+            {
+              "id": "3eb72139-0e04-45a4-8752-f5468d784be3",
+              "label": "Fire",
+              "value": "fire"
+            },
+            {
+              "id": "16ef0b59-603d-4a32-bcce-4d9b2b7b553b",
+              "label": "Vandalism",
+              "value": "vandalism"
+            },
+            {
+              "id": "5c9dc5cc-abd5-4c51-be32-d661433c2348",
+              "label": "Storm damage",
+              "value": "storm_damage"
+            },
+            {
+              "id": "4d18bbd2-63db-44ee-9c9b-63d01dab0da6",
+              "label": "Water damage",
+              "value": "water_damage"
+            },
+            {
+              "id": "c23a6936-76f8-4a9b-ba42-143695a3e699",
+              "label": "Third-party liability",
+              "value": "third_party_liability"
+            },
+            {
+              "id": "a7ef4f91-5e85-4748-b753-a8bd26aceb6d",
+              "label": "Illness",
+              "value": "illness"
+            },
+            {
+              "id": "38982f28-c979-4807-89c0-77203daf08be",
+              "label": "Injury",
+              "value": "injury"
+            },
+            {
+              "id": "57a6142c-5104-4b5e-9cde-ff526e627aee",
+              "label": "Hospitalization",
+              "value": "hospitalization"
+            },
+            {
+              "id": "b67eb5da-f237-4552-ae78-b36f445fca92",
+              "label": "Trip cancellation",
+              "value": "trip_cancellation"
+            },
+            {
+              "id": "4bb78be8-6b3b-4e92-9b9f-ae6348174d03",
+              "label": "Trip delay",
+              "value": "trip_delay"
+            },
+            {
+              "id": "882ab903-5aab-4e62-8c62-7d0c1541ea53",
+              "label": "Lost baggage",
+              "value": "lost_baggage"
+            },
+            {
+              "id": "4071eeba-8d6c-4bfb-bc62-e0b35ce2c402",
+              "label": "Other",
+              "value": "other"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "77f16578-8203-4c0e-9a87-a14b76b88340",
+      "type": "dictionary",
+      "props": {
+        "data": {
+          "name": "docType",
+          "entries": [
+            {
+              "id": "d5f452c7-fe8a-4236-b61e-1ef07eb57b20",
+              "label": "Claim form",
+              "value": "claim_form"
+            },
+            {
+              "id": "97281c70-d346-444f-a1b2-c662422828a1",
+              "label": "Police report",
+              "value": "police_report"
+            },
+            {
+              "id": "368530d1-08e0-4c3a-845b-796e2e349ff9",
+              "label": "Photo evidence",
+              "value": "photo_evidence"
+            },
+            {
+              "id": "f64af60f-b023-4d59-b865-b0404cba9c08",
+              "label": "Repair estimate",
+              "value": "repair_estimate"
+            },
+            {
+              "id": "53550657-c2f5-4f01-aa2e-4cd6bd0da158",
+              "label": "Proof of ownership",
+              "value": "proof_of_ownership"
+            },
+            {
+              "id": "d5c84f0b-6da2-4365-bbe3-dda8dd871217",
+              "label": "Medical records",
+              "value": "medical_records"
+            },
+            {
+              "id": "03ddc77b-830f-432f-bf6e-f48470efeaa3",
+              "label": "Hospital discharge summary",
+              "value": "hospital_discharge_summary"
+            },
+            {
+              "id": "cee4294e-22db-45f9-b021-0f494b91aead",
+              "label": "Travel itinerary",
+              "value": "travel_itinerary"
+            },
+            {
+              "id": "4cd24273-6580-4e2c-a58f-6774a70f8944",
+              "label": "Receipts",
+              "value": "receipts"
+            },
+            {
+              "id": "cfc75c48-e0a0-41d0-8b0b-c25ba69f1c8c",
+              "label": "Liability statement",
+              "value": "liability_statement"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "imports": [],
+  "contentType": "policy",
+  "description": "Shared enums for the claims intake questionnaire - policy type, incident type, claim type, and claim reason."
+}

@@ -1,0 +1,195 @@
+{
+  "STEP1_QUESTIONS": [
+    {
+      "id": "what_happened",
+      "type": "radio",
+      "label": "What happened? Select the situation that best describes your claim.",
+      "required": true,
+      "options": [
+        { "value": "vehicle_incident",   "label": "My vehicle was damaged, in an accident, or stolen" },
+        { "value": "health_treatment",   "label": "I (or a family member) needed medical treatment or hospitalization" },
+        { "value": "travel_disruption",  "label": "I experienced a problem during a flight or travel trip" },
+        { "value": "policyholder_death", "label": "The insured person has passed away" }
+      ]
+    }
+  ],
+
+  "STEP2_BY_TYPE": {
+    "vehicle_incident": {
+      "claimType": "MOTOR",
+      "requiredIds": ["motor_reason", "incident_date", "incident_location"],
+      "reasonField": "motor_reason",
+      "questions": [
+        {
+          "id": "motor_reason",
+          "type": "dropdown",
+          "label": "What type of vehicle incident was it?",
+          "required": true,
+          "options": [
+            { "value": "COLLISION",        "label": "Vehicle collision or road accident" },
+            { "value": "THEFT",            "label": "Vehicle theft or break-in" },
+            { "value": "NATURAL_DISASTER", "label": "Natural disaster damage (flood, storm, earthquake)" },
+            { "value": "FIRE",             "label": "Fire damage" },
+            { "value": "THIRD_PARTY",      "label": "Third-party or hit-and-run damage" }
+          ]
+        },
+        {
+          "id": "incident_date",
+          "type": "date",
+          "label": "When did the incident occur?",
+          "required": true
+        },
+        {
+          "id": "incident_location",
+          "type": "text",
+          "label": "Where did the incident happen?",
+          "required": true,
+          "placeholder": "e.g. MG Road, Bangalore"
+        }
+      ]
+    },
+
+    "health_treatment": {
+      "claimType": "MEDICAL",
+      "requiredIds": ["medical_reason", "admission_date", "hospital_name"],
+      "reasonField": "medical_reason",
+      "questions": [
+        {
+          "id": "medical_reason",
+          "type": "dropdown",
+          "label": "What type of medical event occurred?",
+          "required": true,
+          "options": [
+            { "value": "SURGERY",          "label": "Surgery or major procedure" },
+            { "value": "HOSPITALIZATION",  "label": "Hospitalization or in-patient treatment" },
+            { "value": "ACCIDENT_INJURY",  "label": "Injury from an accident" },
+            { "value": "ILLNESS",          "label": "Illness or medical condition" },
+            { "value": "CRITICAL_ILLNESS", "label": "Critical illness (cancer, heart attack, stroke, etc.)" }
+          ]
+        },
+        {
+          "id": "admission_date",
+          "type": "date",
+          "label": "When did you receive treatment or get admitted?",
+          "required": true
+        },
+        {
+          "id": "hospital_name",
+          "type": "text",
+          "label": "Name of the hospital or clinic",
+          "required": true,
+          "placeholder": "e.g. Apollo Hospitals, Chennai"
+        }
+      ]
+    },
+
+    "travel_disruption": {
+      "claimType": "TRAVEL",
+      "requiredIds": ["travel_reason", "trip_date", "trip_destination"],
+      "reasonField": "travel_reason",
+      "questions": [
+        {
+          "id": "travel_reason",
+          "type": "dropdown",
+          "label": "What type of travel problem did you experience?",
+          "required": true,
+          "options": [
+            { "value": "FLIGHT_DELAY",      "label": "Flight delay (3+ hours) or cancellation" },
+            { "value": "LOST_BAGGAGE",      "label": "Lost, damaged, or delayed baggage" },
+            { "value": "TRIP_CANCELLATION", "label": "Trip cancellation before departure" },
+            { "value": "MEDICAL_ABROAD",    "label": "Medical emergency while abroad" },
+            { "value": "MISSED_CONNECTION", "label": "Missed connecting flight" }
+          ]
+        },
+        {
+          "id": "trip_date",
+          "type": "date",
+          "label": "What was your travel or departure date?",
+          "required": true
+        },
+        {
+          "id": "trip_destination",
+          "type": "text",
+          "label": "What was your destination?",
+          "required": true,
+          "placeholder": "e.g. Dubai, London, Singapore"
+        }
+      ]
+    },
+
+    "policyholder_death": {
+      "claimType": "LIFE",
+      "requiredIds": ["cause_of_death", "date_of_death", "nominee_relation"],
+      "reasonField": "cause_of_death",
+      "questions": [
+        {
+          "id": "cause_of_death",
+          "type": "dropdown",
+          "label": "What was the cause of death?",
+          "required": true,
+          "options": [
+            { "value": "NATURAL",          "label": "Natural causes" },
+            { "value": "ACCIDENTAL",       "label": "Accidental death" },
+            { "value": "CRITICAL_ILLNESS", "label": "Critical illness" },
+            { "value": "SUICIDE",          "label": "Suicide (subject to policy terms)" }
+          ]
+        },
+        {
+          "id": "date_of_death",
+          "type": "date",
+          "label": "What is the date of the policyholder's passing?",
+          "required": true
+        },
+        {
+          "id": "nominee_relation",
+          "type": "dropdown",
+          "label": "What is your relationship to the policyholder?",
+          "required": true,
+          "options": [
+            { "value": "SPOUSE",  "label": "Spouse" },
+            { "value": "CHILD",   "label": "Child" },
+            { "value": "PARENT",  "label": "Parent" },
+            { "value": "SIBLING", "label": "Sibling" },
+            { "value": "OTHER",   "label": "Other" }
+          ]
+        }
+      ]
+    }
+  },
+
+  "MOTOR": {
+    "requiredDocuments": [
+      { "type": "RC Copy",         "description": "Vehicle registration certificate" },
+      { "type": "Driving License", "description": "Valid driving license of the driver at the time of incident" },
+      { "type": "Repair Estimate", "description": "Repair estimate from an authorized garage or workshop" },
+      { "type": "FIR Copy",        "description": "Police first information report (required for theft or major accidents)" }
+    ]
+  },
+
+  "MEDICAL": {
+    "requiredDocuments": [
+      { "type": "Discharge Summary", "description": "Hospital discharge summary or final diagnosis report" },
+      { "type": "Hospital Bill",      "description": "Itemized bill from the hospital or clinic" },
+      { "type": "Policy Bond",        "description": "Original insurance policy document" },
+      { "type": "ID Proof",           "description": "Government-issued photo ID (Aadhar, Passport, or PAN)" }
+    ]
+  },
+
+  "TRAVEL": {
+    "requiredDocuments": [
+      { "type": "Boarding Pass",             "description": "Boarding pass or e-ticket for the affected flight or journey" },
+      { "type": "Airline Delay Certificate", "description": "Official delay or cancellation certificate from the airline" },
+      { "type": "Policy Bond",               "description": "Original travel insurance policy document" },
+      { "type": "Baggage Loss Report",       "description": "Property irregularity report (PIR) from the airline (for lost baggage)" }
+    ]
+  },
+
+  "LIFE": {
+    "requiredDocuments": [
+      { "type": "Death Certificate",         "description": "Original or certified copy of the death certificate" },
+      { "type": "Policy Bond",               "description": "Original life insurance policy document" },
+      { "type": "ID Proof (Nominee)",        "description": "Government-issued photo ID of the claimant / nominee" },
+      { "type": "Medical / Hospital Record", "description": "Relevant hospital records or post-mortem report (if applicable)" }
+    ]
+  }
+}

@@ -3,20 +3,20 @@
     {
       "id": "input-1",
       "type": "inputNode",
-      "position": { "x": 180, "y": 240 },
+      "position": { "x": 100, "y": 240 },
       "name": "Request"
     },
     {
       "id": "function-1",
       "type": "functionNode",
-      "position": { "x": 470, "y": 240 },
+      "position": { "x": 420, "y": 240 },
       "name": "Claim Type Config",
-      "content": "/**\n * @param {import('gorules').Input} input\n */\nconst CONFIG = {\n  LIFE: {\n    questions: [\n      { questionId: 'dateOfDeath', questionText: 'Date of death', fieldType: 'date' },\n      { questionId: 'hospital', questionText: 'Hospital/place', fieldType: 'text' },\n      { questionId: 'causeOfDeath', questionText: 'Cause of death', fieldType: 'dropdown' },\n      { questionId: 'nomineeRelation', questionText: 'Nominee relationship', fieldType: 'dropdown' }\n    ],\n    requiredDocuments: ['Death Certificate', 'Policy Bond', 'ID Proof (Nominee)', 'Hospital / Medical Record']\n  },\n  MEDICAL: {\n    questions: [\n      { questionId: 'admissionDate', questionText: 'Date of admission', fieldType: 'date' },\n      { questionId: 'hospital', questionText: 'Hospital name', fieldType: 'text' },\n      { questionId: 'diagnosis', questionText: 'Diagnosis', fieldType: 'text' }\n    ],\n    requiredDocuments: ['Discharge Summary', 'Hospital Bill', 'Policy Bond', 'ID Proof']\n  },\n  MOTOR: {\n    questions: [\n      { questionId: 'incidentDate', questionText: 'Date of incident', fieldType: 'date' },\n      { questionId: 'incidentType', questionText: 'Type of incident', fieldType: 'dropdown' }\n    ],\n    requiredDocuments: ['RC Copy', 'Driving License', 'Repair Estimate']\n  },\n  TRAVEL: {\n    questions: [\n      { questionId: 'tripDate', questionText: 'Date of trip', fieldType: 'date' },\n      { questionId: 'issueType', questionText: 'What happened', fieldType: 'dropdown' }\n    ],\n    requiredDocuments: ['Boarding Pass', 'Airline Delay Certificate', 'Policy Bond']\n  }\n};\n\nconst handler = (input) => {\n  const config = CONFIG[input.claimType];\n  if (!config) {\n    throw new Error('Unknown claim type: ' + input.claimType);\n  }\n  return {\n    claimType: input.claimType,\n    questions: config.questions,\n    requiredDocuments: config.requiredDocuments\n  };\n};"
+      "content": "/**\n * Claim-type configuration lookup.\n * All data comes from input.questionDefs (question-definitions.json).\n * To change questions or required documents per type, edit question-definitions.json only.\n *\n * Input:  { claimType: string, questionDefs: { MOTOR: {...}, MEDICAL: {...}, ... } }\n * Output: { claimType, questions: QuestionDef[], requiredDocuments: string[] }\n */\nconst handler = (input) => {\n  const defs   = input.questionDefs || {};\n  const config = defs[input.claimType];\n  if (!config) throw new Error('Unknown claim type: ' + input.claimType);\n\n  return {\n    claimType: input.claimType,\n    questions: (config.questions || []).map(q => ({\n      questionId:   q.id,\n      questionText: q.label,\n      fieldType:    q.type\n    })),\n    requiredDocuments: (config.requiredDocuments || []).map(d => d.type)\n  };\n};"
     },
     {
       "id": "output-1",
       "type": "outputNode",
-      "position": { "x": 780, "y": 240 },
+      "position": { "x": 760, "y": 240 },
       "name": "Response"
     }
   ],
