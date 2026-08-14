@@ -6,6 +6,23 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormSchema, FormField, FieldCondition } from '../../models/form-schema.model';
+import { ClaimApiService } from '../../services/claim-api.service';
+import { ClaimAnswerPayload, ClaimSubmitRequest } from '../../models/claim-api.model';
+
+/**
+ * form-schema.json's claim_type radio options (AUTO/HEALTH/PROPERTY/LIFE)
+ * predate the backend's GoRules claim-type-config.json, which only knows
+ * LIFE/MEDICAL/MOTOR/TRAVEL. Mapped here at submit time rather than
+ * changing either side. PROPERTY has no real backend equivalent yet -
+ * TRAVEL is the closest existing bucket, not a considered business
+ * decision, and should be revisited.
+ */
+const CLAIM_TYPE_MAP: Record<string, string> = {
+  AUTO: 'MOTOR',
+  HEALTH: 'MEDICAL',
+  PROPERTY: 'TRAVEL',
+  LIFE: 'LIFE'
+};
 
 @Component({
   selector: 'app-chat-portal',
@@ -25,13 +42,16 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   claimRef = '';
   selectedFiles: { [fieldId: string]: File[] } = {};
   isLoading = true;
+  isSubmitting = false;
+  submitError = '';
   today = new Date().toISOString().split('T')[0];
   private shouldScroll = false;
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private claimApiService: ClaimApiService
   ) {}
 
   ngOnInit(): void {
@@ -164,10 +184,48 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   }
 
   onSubmit(): void {
-    this.claimRef = Math.random().toString(36).slice(2, 8).toUpperCase();
-    this.isSubmitted = true;
-    this.currentField = null;
-    this.shouldScroll = true;
+    this.isSubmitting = true;
+    this.submitError = '';
+
+    const rawClaimType = this.form.get('claim_type')?.value ?? 'LIFE';
+    const claimType = CLAIM_TYPE_MAP[rawClaimType] ?? rawClaimType;
+
+    const answers: ClaimAnswerPayload[] = this.answeredFields
+      .filter(a => a.field.type !== 'file') // files travel as multipart parts, not as answers
+      .map(a => ({
+        questionId: a.field.id,
+        questionText: a.field.label,
+        answerText: this.form.get(a.field.id)?.value ?? ''
+      }));
+
+    const claimRequest: ClaimSubmitRequest = {
+      customerId: 'guest',
+      policyId: 'POL-UNKNOWN',
+      claimType,
+      claimReason: rawClaimType,
+      freeText: this.form.get('additional_comments')?.value ?? '',
+      answers
+    };
+
+    const allFiles = Object.values(this.selectedFiles).flat();
+
+    this.claimApiService.submit(claimRequest, allFiles).subscribe({
+      next: response => {
+        this.isSubmitting = false;
+        if (response.fileErrors?.length) {
+          this.submitError = response.fileErrors.join(' | ');
+          return;
+        }
+        this.claimRef = response.claimId;
+        this.isSubmitted = true;
+        this.currentField = null;
+        this.shouldScroll = true;
+      },
+      error: () => {
+        this.isSubmitting = false;
+        this.submitError = 'Failed to submit claim. Please check your connection and try again.';
+      }
+    });
   }
 
   // ── Display helpers ──────────────────────────────────────────

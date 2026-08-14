@@ -75,6 +75,16 @@
             <version>5.17.0</version>
         </dependency>
 
+        <!-- PDFBox: text extraction for the docvalidation OCR pipeline
+             (Section 12/13/etc of the multi-agent spec). Pure-Java, no
+             native binaries. Does not replace the existing
+             OcrExtractionService used by the current /submit flow. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.7</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

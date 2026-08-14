@@ -249,12 +249,15 @@
                 </svg>
                 All fields complete — review your answers above before submitting
               </div>
-              <button type="button" class="btn-submit" (click)="onSubmit()">
-                Submit Claim
+              <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitting">
+                {{ isSubmitting ? 'Submitting...' : 'Submit Claim' }}
                 <svg viewBox="0 0 24 24" fill="none" width="17" height="17">
                   <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
                 </svg>
               </button>
+              @if (submitError) {
+                <div class="submit-error">{{ submitError }}</div>
+              }
             </div>
           }
 
@@ -280,7 +283,7 @@
                 <p>Thank you for submitting your claim. I've received all the details you provided. Our claims team will review your submission and get back to you within <strong>2–3 business days</strong>.</p>
                 <p>A confirmation email has been sent to your registered address. Please keep your claim reference number handy for future correspondence.</p>
                 <div class="agent-confirm-ref">
-                  Claim Reference: <strong>#CLM-{{ claimRef }}</strong>
+                  Claim Reference: <strong>{{ claimRef }}</strong>
                 </div>
               </div>
             </div>

@@ -27,3 +27,19 @@ claims:
     dir: ./uploads
   cors:
     allowed-origin: http://localhost:4200
+
+# New multi-agent document validation pipeline (POST /api/docvalidation/claims).
+# Separate "docvalidation.*" prefix so nothing here collides with the
+# "claims.*" keys above used by the existing /api/claims/submit flow.
+docvalidation:
+  document:
+    max-file-size: 10485760
+    allowed-mime-types:
+      - application/pdf
+      - image/jpeg
+      - image/png
+  relevance:
+    high-threshold: 0.80
+    low-threshold: 0.60
+  mongodb:
+    policy-vector-index: policy_clause_vector_index

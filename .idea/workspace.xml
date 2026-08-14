@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f9ffda45-8496-4280-8632-9756321c877e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../VSCodeWorkspace/y6-workspace/src/.idea/src.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../VSCodeWorkspace/y6-workspace/y6-crp-scripts/.idea/y6-crp-scripts.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../mcp-server/.idea/mcp-server.iml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_C:/NWLS/WorkSpaces/claims-assistant" value="3Hl2Elxw2OmS1YZP7LDSePiTZHi" />
+    </persistenceIdMap>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="feature/RAG_vectorSearch_Implementation" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0000172758104042" />
+      <entry key="MS500" value="1.3911305469997617" />
+      <entry key="S2" value="5.121726381464027" />
+      <entry key="S5" value="7.963587950332707" />
+      <entry key="S10" value="9.334244411661166" />
+      <entry key="S30" value="10.408025643432483" />
+      <entry key="S60" value="10.704624294231584" />
+      <entry key="M2" value="11.093746905892766" />
+      <entry key="M5" value="13.342240470174339" />
+      <entry key="M10" value="16.11098783669839" />
+      <entry key="M15" value="17.60472544565329" />
+      <entry key="M30" value="19.52655544434147" />
+      <entry key="H1" value="20.68532148300476" />
+      <entry key="H2" value="21.322897885940073" />
+      <entry key="H4" value="21.76134581499153" />
+      <entry key="D1" value="42.394410447913465" />
+      <entry key="W1" value="79.88683388178036" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="2.635906998134529E-156" />
+      <entry key="M10" value="1.6235476581038608E-78" />
+      <entry key="M15" value="1.3813700246652133E-52" />
+      <entry key="M30" value="1.1753169890141187E-26" />
+      <entry key="H1" value="1.084120375702864E-13" />
+      <entry key="H2" value="3.2925983291359184E-7" />
+      <entry key="H4" value="5.738116702486901E-4" />
+      <entry key="D1" value="0.28826697856454453" />
+      <entry key="W1" value="0.8371973448271763" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.9395390877504036" />
+      <entry key="MS500" value="1.372295363073929" />
+      <entry key="S2" value="5.100090371558019" />
+      <entry key="S5" value="7.9497264883610805" />
+      <entry key="S10" value="9.326060449207256" />
+      <entry key="S30" value="10.404970898362317" />
+      <entry key="S60" value="10.703051507873719" />
+      <entry key="M2" value="11.092923755856827" />
+      <entry key="M5" value="13.341816936995958" />
+      <entry key="M10" value="16.11071751742688" />
+      <entry key="M15" value="17.604524145235537" />
+      <entry key="M30" value="19.526441221688447" />
+      <entry key="H1" value="20.685260278644623" />
+      <entry key="H2" value="21.32286648555922" />
+      <entry key="H4" value="21.76190289174608" />
+      <entry key="D1" value="42.682631532137144" />
+      <entry key="W1" value="80.72401282707874" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3Hl2Elxw2OmS1YZP7LDSePiTZHi" />
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.ClaimsAssistantApplication.executor": "Run",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "master",
+    "git.auto.fetch.suggestion.counter": "1",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/NWLS/WorkSpaces/claims-assistant",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="ClaimsAssistantApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="claims-assistant" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.nextgen.claims.ClaimsAssistantApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f9ffda45-8496-4280-8632-9756321c877e" name="Changes" comment="" />
+      <created>1786428226022</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1786428226022</updated>
+      <workItem from="1786428227248" duration="1244000" />
+      <workItem from="1786429901494" duration="7757000" />
+      <workItem from="1786444664150" duration="16441000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+    <option name="exactExcludedFiles">
+      <list>
+        <option value="$PROJECT_DIR$/frontend/node_modules/.staging/karma-c7e5adc3/config.tpl.js" />
+      </list>
+    </option>
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-core" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.validation:jakarta.validation-api" />
+    <option featureType="dependencySupport" implementationName="java:io.projectreactor:reactor-core" />
+    <option featureType="dependencySupport" implementationName="executable:kubectl" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.data:spring-data-commons" />
+    <option featureType="dependencySupport" implementationName="java:org.hibernate.validator:hibernate-validator" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-messaging" />
+    <option featureType="dependencySupport" implementationName="java:javax.validation:validation-api" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.boot:spring-boot" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-webmvc" />
+    <option featureType="dependencySupport" implementationName="java:org.projectlombok:lombok" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

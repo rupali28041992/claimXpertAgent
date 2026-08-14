@@ -561,6 +561,14 @@ form { display: flex; flex-direction: column; }
 
   &:hover { opacity: .88; }
   &:active { transform: scale(.99); }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}
+
+.submit-error {
+  align-self: flex-end;
+  font-size: 0.82rem;
+  color: #b91c1c;
+  font-weight: 600;
 }
 
 // ─── SUCCESS ─────────────────────────────────────────────────
