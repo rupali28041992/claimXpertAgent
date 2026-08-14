@@ -73,6 +73,17 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   today = new Date().toISOString().split('T')[0];
   private shouldScroll = false;
 
+  policy: PolicyLookupResponse | null = null;
+  isResolvingPolicy = false;
+  policyLookupError: string | null = null;
+
+  isSubmitting = false;
+  submitError: string | null = null;
+  submitResult: ClaimSubmitResponse | null = null;
+
+  /** Maps a dynamically-generated file field id (e.g. "doc_0") back to the document name required by the backend. */
+  private documentLabels: { [fieldId: string]: string } = {};
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,

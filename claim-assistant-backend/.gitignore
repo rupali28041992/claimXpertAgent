@@ -4,3 +4,4 @@ logs/
 .claude/
 ${project.build.directory}/
 *.iml
+uploads/

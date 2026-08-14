@@ -10,10 +10,12 @@ import com.nextgen.claims.dto.IntentSuggestRequest;
 import com.nextgen.claims.dto.IntentSuggestResponse;
 import com.nextgen.claims.dto.QuestionnaireRequest;
 import com.nextgen.claims.dto.QuestionnaireState;
+import com.nextgen.claims.dto.PolicyLookupResponse;
 import com.nextgen.claims.model.Claim;
 import com.nextgen.claims.rules.ClaimTypeConfig;
 import com.nextgen.claims.rules.RulesEngineService;
 import com.nextgen.claims.service.ClaimService;
+import com.nextgen.claims.service.PolicyService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -37,7 +39,14 @@ public class ClaimController {
     private final ClaimService claimService;
     private final IntentClassificationAgent intentClassificationAgent;
     private final RulesEngineService rulesEngineService;
+    private final PolicyService policyService;
     private final ObjectMapper objectMapper;
+
+    /** Screen 1: user types a policy number, we resolve customerId/claimType from Mongo. */
+    @GetMapping("/policy/{policyNumber}")
+    public PolicyLookupResponse lookupPolicy(@PathVariable String policyNumber) {
+        return policyService.lookup(policyNumber);
+    }
 
     /** Screen 1's optional "Suggest Claim Type" button. No RAG. */
     @PostMapping("/suggest-type")

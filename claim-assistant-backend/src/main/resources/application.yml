@@ -19,7 +19,7 @@ spring:
       chat:
         model: qwen2.5:7b-instruct-q4_K_M
       embedding:
-        model: nomic-embed-text
+        model: bge-m3
 
 # Simple threshold config for GoRules-style routing until the real
 # GoRules SDK/table is wired in. Swap RulesEngineService's internals
@@ -31,3 +31,9 @@ claims:
     dir: ./uploads
   cors:
     allowed-origin: http://localhost:4200
+  # ValidationAgent's per-file document check overrides the app-wide chat
+  # model with this one - qwen3.5:9b is a "thinking" model with no way to
+  # disable reasoning in this Spring AI version, so it's too slow for a
+  # per-file loop. Needs `ollama pull qwen2.5:3b` (or whatever is set here).
+  validation:
+    model: qwen2.5:3b

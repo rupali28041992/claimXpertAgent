@@ -1,25 +1,3 @@
-<!-- ══ PAGE HEADER ══════════════════════════════════════════ -->
-<header class="page-header">
-  <div class="page-header-inner">
-    <div class="page-logo">
-      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#2a69ac"/>
-      </svg>
-      <span>InsureCo</span>
-    </div>
-    <nav class="page-nav">
-      <a href="#">Home</a>
-      <a href="#" class="nav-active">File Claim</a>
-      <a href="#">My Claims</a>
-      <a href="#">Support</a>
-    </nav>
-    <div class="page-user">
-      <div class="user-dot"></div>
-      <span>Guest</span>
-    </div>
-  </div>
-</header>
-
 <!-- ══ MAIN CONTENT ═════════════════════════════════════════ -->
 <main class="portal-main">
   <div class="portal-card">
@@ -525,10 +503,10 @@
                   </div>
                   <span class="agent-confirm-title">Claim Submitted Successfully!</span>
                 </div>
-                <p>Thank you for submitting your claim. I've received all the details you provided. Our claims team will review your submission and get back to you within <strong>2–3 business days</strong>.</p>
-                <p>A confirmation email has been sent to your registered address. Please keep your claim reference number handy for future correspondence.</p>
+                <p>{{ submitResult?.summary }}</p>
+                <p>Status: <strong>{{ submitResult?.status }}</strong></p>
                 <div class="agent-confirm-ref">
-                  Claim Reference: <strong>#CLM-{{ claimRef }}</strong>
+                  Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>
               </div>
             </div>
@@ -548,21 +526,3 @@
 
   </div>
 </main>
-
-<!-- ══ PAGE FOOTER ══════════════════════════════════════════ -->
-<footer class="page-footer">
-  <div class="page-footer-inner">
-    <div class="footer-brand">
-      <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#94a3b8"/>
-      </svg>
-      <span>InsureCo</span>
-    </div>
-    <div class="footer-links">
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-      <a href="#">Contact Us</a>
-    </div>
-    <div class="footer-copy">© 2026 InsureCo. All rights reserved.</div>
-  </div>
-</footer>
