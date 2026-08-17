@@ -40,6 +40,17 @@ public class ValidationAgent {
                 .map(a -> a.getQuestionId() + ": " + a.getAnswerText())
                 .collect(Collectors.joining("\n"));
 
+        String extractedFieldsText = extractedFields == null ? "" : extractedFields.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining("\n"));
+
+        // Escape angle brackets (< and >) that StringTemplate treats as template delimiters.
+        // This prevents ST4 compile errors when OCR or policy text contains '<' or '>'.
+        String safeClause = escapeST(clauseText);
+        String safeOcr = escapeST(ocrText);
+        String safeFields = escapeST(extractedFieldsText);
+        String safeAnswers = escapeST(answersText);
+
         String prompt = """
                 You are validating one uploaded claim document against the insurer's policy wording.
 
@@ -63,11 +74,17 @@ public class ValidationAgent {
 
                 Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
                 "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(clauseText, ocrText, extractedFields, answersText);
+                """.formatted(safeClause, safeOcr, safeFields, safeAnswers);
 
         return chatClient.prompt()
                 .user(prompt)
                 .call()
                 .entity(ValidationResult.class);
+    }
+
+    // Replace ST template delimiters so string content is safe to pass into Spring AI's PromptTemplate (ST4).
+    private static String escapeST(String s) {
+        if (s == null) return "";
+        return s.replace("<", "\\<").replace(">", "\\>");
     }
 }
