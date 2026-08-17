@@ -55,40 +55,54 @@ public class ValidationAgent {
         String safeClaimReason = escapeST(claimReason);
 
         String prompt = """
-                You are validating one uploaded claim document against the insurer's policy wording.
+        You are validating one uploaded claim document against the insurer's policy wording.
 
-                CLAIM TYPE: %s
-                CLAIM REASON: %s
+        CLAIM TYPE: %s
+        CLAIM REASON: %s
 
-                POLICY CLAUSE(S):
-                %s
+        POLICY CLAUSE(S):
+        %s
 
-                DOCUMENT TEXT (OCR extracted):
-                %s
+        DOCUMENT TEXT (OCR extracted):
+        %s
 
-                EXTRACTED FIELDS FROM DOCUMENT:
-                %s
+        EXTRACTED FIELDS FROM DOCUMENT:
+        %s
 
-                ANSWERS THE CUSTOMER TYPED IN THE FORM:
-                %s
+        ANSWERS THE CUSTOMER TYPED IN THE FORM:
+        %s
 
-                Check three things:
-                1. Is this document even the right kind of document for a %s claim (e.g. a medical
-                   bill/discharge summary/prescription for a MEDICAL claim, a repair estimate for a
-                   MOTOR claim)? If the document is about something unrelated to this claim type
-                   (e.g. a travel itinerary, boarding pass, or hotel invoice submitted for a MEDICAL
-                   claim), that is a relevance failure even if the document is a legitimate document
-                   of its own kind.
-                2. Does anything in the document contradict or fail to satisfy the policy clause(s) above
-                   (e.g. a waiting-period or exclusion violation)?
-                3. Does any extracted field meaningfully mismatch what the customer typed
-                   (e.g. a different hospital/garage name, date, or amount - ignore trivial spelling/formatting differences)?
+        Check three things:
+        1. Is this document the right kind of document for a %s claim?
+        2. Does anything contradict or fail to satisfy the policy clauses?
+        3. Does any extracted field meaningfully mismatch what the customer typed?
 
-                Respond with flags as short machine-readable codes, e.g. "irrelevant_document:%s",
-                "mismatch:hospitalName", or "clause_conflict:waiting_period". Return an empty flags
-                list only if the document is relevant to this claim type AND nothing else is wrong.
-                """.formatted(safeClaimType, safeClaimReason, safeClause, safeOcr, safeFields, safeAnswers,
-                claimType, claimType);
+        Respond ONLY with valid JSON.
+
+        The response must contain these fields:
+        - clauseSatisfied: boolean
+        - explanation: string
+        - flags: array of strings
+
+        Rules:
+        - clauseSatisfied must be true or false.
+        - explanation must be a short string.
+        - flags must always be a JSON array of strings.
+        - If the document is unrelated to the claim type, set clauseSatisfied to false
+          and add "irrelevant_document:" followed by the claim type to flags.
+        - Do not use markdown.
+        - Do not use ```json.
+        - Do not add any text before or after the JSON.
+        - Always return a complete JSON object.
+        """.formatted(
+                safeClaimType,
+                safeClaimReason,
+                safeClause,
+                safeOcr,
+                safeFields,
+                safeAnswers,
+                claimType
+        );
 
         return chatClient.prompt()
                 .user(prompt)
