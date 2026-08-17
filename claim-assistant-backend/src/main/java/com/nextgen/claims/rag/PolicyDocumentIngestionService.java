@@ -1,0 +1,47 @@
+package com.nextgen.claims.rag;
+
+import com.nextgen.claims.service.DocumentTextExtractor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Extract -> chunk -> embed -> store, for one policy document (PDF/DOCX) covering one claim
+ * type. Shared by {@code PolicyDocumentSeeder} (the two classpath policy docs at startup) and
+ * {@code PolicyDocumentController} (admin upload, for future claim types / updated versions).
+ */
+@Service
+@RequiredArgsConstructor
+public class PolicyDocumentIngestionService {
+
+    private final DocumentTextExtractor documentTextExtractor;
+    private final ClauseChunker clauseChunker;
+    private final VectorStore vectorStore;
+
+    public int ingest(String claimType, String riderCode, InputStream content, String filename) {
+        String text = documentTextExtractor.extractText(content, filename);
+        List<ClauseChunker.Chunk> chunks = clauseChunker.chunk(text);
+
+        List<Document> documents = chunks.stream()
+                .map(chunk -> {
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("productType", claimType);
+                    metadata.put("riderCode", riderCode);
+                    metadata.put("section", chunk.heading());
+                    metadata.put("sourceFileName", filename);
+                    return new Document(chunk.text(), metadata);
+                })
+                .toList();
+
+        if (!documents.isEmpty()) {
+            vectorStore.add(documents);
+        }
+        return documents.size();
+    }
+}

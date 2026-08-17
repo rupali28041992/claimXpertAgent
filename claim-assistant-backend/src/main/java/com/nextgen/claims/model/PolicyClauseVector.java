@@ -34,4 +34,5 @@ public class PolicyClauseVector {
     private String section;
     private String clauseText;
     private List<Double> embedding;
+    private String sourceFileName; // null for rows seeded before this field existed
 }

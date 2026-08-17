@@ -1,5 +1,7 @@
 package com.nextgen.claims.service;
 
+import com.nextgen.claims.agent.ClaimDecisionAgent;
+import com.nextgen.claims.agent.ClaimDecisionResult;
 import com.nextgen.claims.agent.ValidationAgent;
 import com.nextgen.claims.agent.ValidationResult;
 import com.nextgen.claims.dto.ClaimSubmitRequest;
@@ -22,7 +24,7 @@ import java.util.UUID;
 
 /**
  * Orchestrates the single Submit request: Step 1 (generate claimId) through
- * Step 5 (GoRules routing) from the architecture doc, then does exactly ONE
+ * Step 5 (LLM claim decision) from the architecture doc, then does exactly ONE
  * insert into the `claims` collection. Nothing is written to Mongo before
  * this method returns successfully.
  */
@@ -36,6 +38,7 @@ public class ClaimService {
     private final ValidationAgent validationAgent;
     private final RulesEngineService rulesEngineService;
     private final ReadinessScoreCalculator readinessScoreCalculator;
+    private final ClaimDecisionAgent claimDecisionAgent;
 
     public ClaimSubmitResponse submit(ClaimSubmitRequest request, List<MultipartFile> files) {
 
@@ -100,14 +103,14 @@ public class ClaimService {
                 .createdAt(Instant.now())
                 .build();
 
-        // Step 5: GoRules Table 3 (hard rules) + Table 4 (routing) - no AI
-        String hardRuleFailure = rulesEngineService.evaluateHardRules(claim);
-        var routing = rulesEngineService.route(claim, hardRuleFailure);
+        // Step 5: LLM claim decision - retrieved policy clauses + answers + document content
+        ClaimDecisionResult decision = claimDecisionAgent.decide(claim);
+        ClaimStatus status = toClaimStatus(decision.status());
 
-        claim.setStatus(routing.status());
+        claim.setStatus(status);
         claim.setStatusHistory(List.of(
                 new StatusChange(ClaimStatus.SUBMITTED, Instant.now(), "Claim submitted", "SYSTEM"),
-                new StatusChange(routing.status(), Instant.now(), routing.reason(), "SYSTEM")
+                new StatusChange(status, Instant.now(), decision.reason(), "SYSTEM")
         ));
 
         // ONE Mongo write for the entire claim
@@ -125,6 +128,10 @@ public class ClaimService {
     public Claim getClaim(String claimId) {
         return claimRepository.findById(claimId)
                 .orElseThrow(() -> new IllegalArgumentException("Claim not found: " + claimId));
+    }
+
+    private ClaimStatus toClaimStatus(ClaimDecisionResult.AutoRoutingStatus status) {
+        return ClaimStatus.valueOf(status.name());
     }
 
     private String buildSummary(int score, List<String> flags) {

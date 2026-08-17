@@ -1,7 +1,6 @@
 package com.nextgen.claims.agent;
 
 import com.nextgen.claims.model.ClaimAnswer;
-import com.nextgen.claims.model.PolicyClauseVector;
 import com.nextgen.claims.rag.PolicyClauseRetriever;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -24,17 +23,19 @@ public class ValidationAgent {
     private final ChatClient chatClient;
     private final PolicyClauseRetriever policyClauseRetriever;
 
+    private static final int TOP_K = 3;
+
     public ValidationResult validate(String claimType,
                                       String claimReason,
                                       String ocrText,
                                       Map<String, String> extractedFields,
                                       List<ClaimAnswer> claimAnswers) {
 
-        List<PolicyClauseVector> clauses = policyClauseRetriever.retrieveRelevantClauses(claimType, claimReason);
+        List<String> clauses = policyClauseRetriever.retrieveRelevantClauses(claimType, claimReason, TOP_K);
 
         String clauseText = clauses.isEmpty()
                 ? "No specific policy clause found for this claim type."
-                : clauses.stream().map(PolicyClauseVector::getClauseText).collect(Collectors.joining("\n---\n"));
+                : String.join("\n---\n", clauses);
 
         String answersText = claimAnswers == null ? "" : claimAnswers.stream()
                 .map(a -> a.getQuestionId() + ": " + a.getAnswerText())

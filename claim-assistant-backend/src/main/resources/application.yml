@@ -17,12 +17,12 @@ spring:
       embedding:
         model: nomic-embed-text
 
-# Simple threshold config for GoRules-style routing until the real
-# GoRules SDK/table is wired in. Swap RulesEngineService's internals
-# to call GoRules without touching any caller of that service.
 claims:
-  routing:
-    auto-approve-max-amount: 50000
+  rag:
+    top-k: 5
+    max-candidates: 2000
+    chunk-max-chars: 1500
+    chunk-overlap-chars: 200
   upload:
     dir: ./uploads
   cors:

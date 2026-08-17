@@ -59,6 +59,26 @@
             <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- Apache Tika: text extraction for policy-document ingestion and claim
+             documents. Scoped to just the PDF/DOCX parser modules rather than the
+             heavy tika-parsers-standard-package aggregator (which also pulls in
+             POI, image/audio/video parsers, and an OCR wrapper we never call). -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parser-pdf-module</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parser-microsoft-module</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+
         <!-- GoRules ZEN Engine: decision-table runtime for questions/documents/hard-rules/routing.
              Business users edit the JDM (.json) decision graphs; this jar just evaluates them. -->
         <dependency>
