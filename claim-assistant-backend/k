@@ -1,0 +1,43 @@
+flowchart TD
+      A[Customer types policy number] --> B["GET /api/claims/policy/{policyNumber}<br/>(OURS — real Mongo lookup)"]
+      B --> C["POST /api/claims/questions (repeated)<br/>(AVINASH — dynamic 2-step questionnaire)"]
+      C --> D[Upload required documents]
+      D --> E["POST /api/claims/submit (multipart)"]
+
+      E --> F{{Per uploaded file<br/>independent, isolated failures}}
+      F --> G["FileValidationService<br/>(RUPALI — MIME/size check, non-AI)"]
+      G --> H["OcrService → PdfTextOcrService<br/>(RUPALI — real PDFBox text extraction)"]
+      H --> I["DocumentRelevanceAgent<br/>(RUPALI — embed + cosine similarity;<br/>Ollama call only in borderline confidence band)"]
+      I -->|valid + relevant| J["DocumentValidationAgent<br/>(RUPALI — checks doc against retrieved clause)"]
+      I -->|not relevant / invalid| K[Flagged, excluded from validation]
+
+      J --> L["PolicyRagAgent<br/>(RUPALI — once per claim, not per file)"]
+      L --> M{{"policy_clauses OR policy_clause_vectors?<br/>⚠ OPEN DECISION — not yet chosen"}}
+
+      J --> N{{All files processed}}
+      K --> N
+      N --> O["Multi-agent investigation — PARALLEL<br/>(AVINASH — thread pool)"]
+
+      O --> P1[RequirementAgent<br/>required docs present?]
+      O --> P2[PolicyCoverageAgent<br/>incident covered by clause?]
+      O --> P3[InvestigationAgent<br/>OCR fields vs typed answers?]
+
+      P1 --> Q["FinalJudgeAgent<br/>(AVINASH — weighted confidence,<br/>deterministic Java calc + LLM reasoning)"]
+      P2 --> Q
+      P3 --> Q
+
+      Q --> R{Verdict}
+      R -->|APPROVED| S1[Mongo write: claims + claim_investigations]
+      R -->|REJECTED| S1
+      R -->|HUMAN_REVIEW_REQUIRED| S1
+
+      S1 --> T["Router → /investigating/:claimId<br/>(AVINASH — animated per-agent reveal)"]
+      T --> U["Router → /decision/:claimId<br/>(AVINASH — verdict + confidence + findings)"]
+
+      V[Add Policy screen — always reachable from nav] --> W["POST /api/policies<br/>(OURS — real Mongo save)"]
+      W --> X[(policies collection)]
+
+      style M fill:#fff3cd,stroke:#e0a800
+      style A fill:#e7f3ff
+      style U fill:#d4edda
+      style V fill:#e7f3ff
