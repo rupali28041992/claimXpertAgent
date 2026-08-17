@@ -1,0 +1,40 @@
+1. Sanity-check the questions/required-docs config (unrelated to this work, but confirms the app is up):
+  curl http://localhost:8080/api/claims/config/MEDICAL
+ 
+ 
+ 
+2. The main test — submit a MEDICAL claim with a real document attached, so ClaimDecisionAgent has policy clauses + document text + answers to reason over:
+  curl -X POST http://localhost:8080/api/claims/submit \
+    -F 'claim={
+          "customerId": "cust-001",
+          "policyId": "pol-123",
+          "claimType": "MEDICAL",
+          "claimReason": "Emergency Hospitalization",
+          "freeText": "Hospitalized for emergency appendectomy",
+          "answers": [
+            {"questionId": "q1", "questionText": "Hospital name?", "answerText": "Apollo Hospital"},
+            {"questionId": "q2", "questionText": "Admission date?", "answerText": "2026-08-10"}
+          ]
+        };type=application/json' \
+    -F 'files=@/path/to/some_receipt.pdf;type=application/pdf'
+  Swap /path/to/some_receipt.pdf for any real PDF/DOCX on your machine — even reusing src/main/resources/medical_claims_policy.pdf itself works as filler content if you don't have a sample receipt handy. Response includes
+  claimId, readinessScore, flags, and status — status is now whatever ClaimDecisionAgent decided (AUTO_APPROVED/AUTO_REJECTED/UNDER_REVIEW).
+ 
+ 
+ 
+3. Pull the claim back to see the decision reasoning in statusHistory:
+  curl http://localhost:8080/api/claims/{claimId}
+  (swap in the claimId from step 2's response). Check statusHistory[1].reason — that's ClaimDecisionResult.reason(), the LLM's explanation.
+ 
+  4. Test the fallback path — stop Ollama, repeat step 2, confirm you still get a 200 with status: UNDER_REVIEW and the fixed fallback reason instead of a 500.
+ 
+  5. Secondary ingestion path (for a claim type with no seeded PDF, e.g. MOTOR):
+  curl -X POST http://localhost:8080/api/admin/policy-documents \
+    -F "claimType=MOTOR" \
+    -F "file=@/path/to/motor_policy.pdf;type=application/pdf"
+  Response: {"claimType":"MOTOR","chunkCount":N}.
+ 
+  6. Adjuster override, if a claim landed in UNDER_REVIEW:
+  curl -X POST http://localhost:8080/api/review/{claimId}/approve \
+    -H "Content-Type: application/json" \
+    -d '{"adjusterId": "adj-1"}'
