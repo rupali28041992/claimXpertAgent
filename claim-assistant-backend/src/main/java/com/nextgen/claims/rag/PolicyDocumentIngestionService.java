@@ -30,10 +30,17 @@ public class PolicyDocumentIngestionService {
 
         List<Document> documents = chunks.stream()
                 .map(chunk -> {
+                    // Document's metadata map rejects null values, so only ever put keys we
+                    // actually have a value for (riderCode/section are legitimately absent
+                    // for base-policy clauses / chunks before any heading is detected).
                     Map<String, Object> metadata = new HashMap<>();
                     metadata.put("productType", claimType);
-                    metadata.put("riderCode", riderCode);
-                    metadata.put("section", chunk.heading());
+                    if (riderCode != null) {
+                        metadata.put("riderCode", riderCode);
+                    }
+                    if (chunk.heading() != null) {
+                        metadata.put("section", chunk.heading());
+                    }
                     metadata.put("sourceFileName", filename);
                     return new Document(chunk.text(), metadata);
                 })

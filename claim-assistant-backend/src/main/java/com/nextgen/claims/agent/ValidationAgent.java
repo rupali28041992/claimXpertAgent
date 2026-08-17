@@ -64,7 +64,11 @@ public class ValidationAgent {
 
                 Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
                 "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(clauseText, ocrText, extractedFields, answersText);
+                """.formatted(
+                PromptTextSanitizer.sanitize(clauseText),
+                PromptTextSanitizer.sanitize(ocrText),
+                PromptTextSanitizer.sanitize(String.valueOf(extractedFields)),
+                PromptTextSanitizer.sanitize(answersText));
 
         return chatClient.prompt()
                 .user(prompt)

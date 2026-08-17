@@ -72,9 +72,12 @@ public class ClaimDecisionAgent {
 
                 Give a short, specific reason a human adjuster could read to understand the
                 decision, and a list of short machine-readable flag codes (empty if none).
-                """.formatted(clauseText, documentsText, answersText,
+                """.formatted(
+                PromptTextSanitizer.sanitize(clauseText),
+                PromptTextSanitizer.sanitize(documentsText),
+                PromptTextSanitizer.sanitize(answersText),
                 claim.getReadinessScore() == null ? 0 : claim.getReadinessScore(),
-                claim.getFlagsAtSubmission());
+                PromptTextSanitizer.sanitize(String.valueOf(claim.getFlagsAtSubmission())));
 
         try {
             return chatClient.prompt().user(prompt).call().entity(ClaimDecisionResult.class);

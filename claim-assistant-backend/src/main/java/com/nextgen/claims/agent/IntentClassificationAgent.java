@@ -26,7 +26,7 @@ public class IntentClassificationAgent {
                 and a confidence score between 0 and 1.
 
                 Customer text: "%s"
-                """.formatted(CLAIM_TYPES, freeText);
+                """.formatted(CLAIM_TYPES, PromptTextSanitizer.sanitize(freeText));
 
         return chatClient.prompt()
                 .user(prompt)
