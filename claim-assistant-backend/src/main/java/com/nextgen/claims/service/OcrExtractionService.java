@@ -1,15 +1,22 @@
 package com.nextgen.claims.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
 /**
- * Step 2a - plain OCR/text extraction, no AI reasoning here. Swap the body
- * for a real OCR library (Tesseract, cloud Vision API, etc.) later; the
- * ValidationAgent only depends on this method's return shape.
+ * Step 2a - plain OCR/text extraction, no AI reasoning here. PDFBox handles
+ * text-based PDFs. Scanned/image-only PDFs and image files (JPEG/PNG) still
+ * extract to an empty string - true OCR (e.g. Tesseract/Tess4J) needs a
+ * native binary beyond this module's current scope. The ValidationAgent only
+ * depends on this method's return shape.
  */
+@Slf4j
 @Service
 public class OcrExtractionService {
 
@@ -17,9 +24,17 @@ public class OcrExtractionService {
     }
 
     public ExtractionResult extract(MultipartFile file) {
-        // Placeholder: wire in a real OCR call here.
-        String text = "OCR extraction not yet wired up for file: " + file.getOriginalFilename();
-        return new ExtractionResult(text, Map.of());
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equals("application/pdf")) {
+            return new ExtractionResult("", Map.of());
+        }
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            String text = new PDFTextStripper().getText(document);
+            return new ExtractionResult(text, Map.of());
+        } catch (Exception e) {
+            log.warn("PDF OCR extraction failed for file={} : {}", file.getOriginalFilename(), e.getMessage());
+            return new ExtractionResult("", Map.of());
+        }
     }
 
     /** Step 2b - cheap deterministic checks, no AI. Returns an error message, or null if OK. */

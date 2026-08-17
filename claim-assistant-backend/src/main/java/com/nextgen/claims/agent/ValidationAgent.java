@@ -51,8 +51,14 @@ public class ValidationAgent {
         String safeFields = escapeST(extractedFieldsText);
         String safeAnswers = escapeST(answersText);
 
+        String safeClaimType = escapeST(claimType);
+        String safeClaimReason = escapeST(claimReason);
+
         String prompt = """
                 You are validating one uploaded claim document against the insurer's policy wording.
+
+                CLAIM TYPE: %s
+                CLAIM REASON: %s
 
                 POLICY CLAUSE(S):
                 %s
@@ -66,15 +72,23 @@ public class ValidationAgent {
                 ANSWERS THE CUSTOMER TYPED IN THE FORM:
                 %s
 
-                Check two things only:
-                1. Does anything in the document contradict or fail to satisfy the policy clause(s) above
+                Check three things:
+                1. Is this document even the right kind of document for a %s claim (e.g. a medical
+                   bill/discharge summary/prescription for a MEDICAL claim, a repair estimate for a
+                   MOTOR claim)? If the document is about something unrelated to this claim type
+                   (e.g. a travel itinerary, boarding pass, or hotel invoice submitted for a MEDICAL
+                   claim), that is a relevance failure even if the document is a legitimate document
+                   of its own kind.
+                2. Does anything in the document contradict or fail to satisfy the policy clause(s) above
                    (e.g. a waiting-period or exclusion violation)?
-                2. Does any extracted field meaningfully mismatch what the customer typed
+                3. Does any extracted field meaningfully mismatch what the customer typed
                    (e.g. a different hospital/garage name, date, or amount - ignore trivial spelling/formatting differences)?
 
-                Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
-                "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(safeClause, safeOcr, safeFields, safeAnswers);
+                Respond with flags as short machine-readable codes, e.g. "irrelevant_document:%s",
+                "mismatch:hospitalName", or "clause_conflict:waiting_period". Return an empty flags
+                list only if the document is relevant to this claim type AND nothing else is wrong.
+                """.formatted(safeClaimType, safeClaimReason, safeClause, safeOcr, safeFields, safeAnswers,
+                claimType, claimType);
 
         return chatClient.prompt()
                 .user(prompt)
