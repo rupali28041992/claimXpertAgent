@@ -61,6 +61,7 @@ public class DocumentAgent {
                     .build();
         }
         log.info("[DocumentAgent] OCR SUCCESS document={}", documentId);
+        log.info("[DocumentAgent] OCR TEXT document={} text={}", documentId, ocrText);
 
         DocumentRelevanceResult relevance = documentRelevanceAgent.assessRelevance(
                 context.getClaimType(), context.getClaimReason(), context.getAnswers(), ocrText);

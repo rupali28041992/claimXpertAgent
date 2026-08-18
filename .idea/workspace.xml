@@ -16,6 +16,7 @@
   </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
+      <entry key="_C:/NWLS/WorkSpaces/claimXpertAgent/claim-assistant-backend" value="3I2JHWovYqb5uK7hsEmmK9hqPHG" />
       <entry key="_C:/NWLS/WorkSpaces/claims-assistant" value="3Hl2Elxw2OmS1YZP7LDSePiTZHi" />
     </persistenceIdMap>
   </component>
@@ -25,7 +26,7 @@
         <entry key="$PROJECT_DIR$" value="feature/RAG_vectorSearch_Implementation" />
       </map>
     </option>
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="DONT_SYNC" />
   </component>
   <component name="McpProjectServerCommands">
@@ -34,23 +35,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000172758104042" />
-      <entry key="MS500" value="1.3911305469997617" />
-      <entry key="S2" value="5.121726381464027" />
-      <entry key="S5" value="7.963587950332707" />
-      <entry key="S10" value="9.334244411661166" />
-      <entry key="S30" value="10.408025643432483" />
-      <entry key="S60" value="10.704624294231584" />
-      <entry key="M2" value="11.093746905892766" />
-      <entry key="M5" value="13.342240470174339" />
-      <entry key="M10" value="16.11098783669839" />
-      <entry key="M15" value="17.60472544565329" />
-      <entry key="M30" value="19.52655544434147" />
-      <entry key="H1" value="20.68532148300476" />
-      <entry key="H2" value="21.322897885940073" />
-      <entry key="H4" value="21.76134581499153" />
-      <entry key="D1" value="42.394410447913465" />
-      <entry key="W1" value="79.88683388178036" />
+      <entry key="MS100" value="1.4796332055072408" />
+      <entry key="MS500" value="1.974953064270313" />
+      <entry key="S2" value="3.182065817442641" />
+      <entry key="S5" value="4.058138962072011" />
+      <entry key="S10" value="4.482207953523221" />
+      <entry key="S30" value="4.81565881722854" />
+      <entry key="S60" value="4.90626891497942" />
+      <entry key="M2" value="4.952737009080313" />
+      <entry key="M5" value="4.980998461429662" />
+      <entry key="M10" value="4.990483093413392" />
+      <entry key="M15" value="4.993651803570341" />
+      <entry key="M30" value="4.996824123602539" />
+      <entry key="H1" value="4.999077100570203" />
+      <entry key="H2" value="5.122869048147827" />
+      <entry key="H4" value="6.693718909972644" />
+      <entry key="D1" value="33.144290098910815" />
+      <entry key="W1" value="81.0351787435976" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -61,34 +62,34 @@
       <entry key="S30" value="0.0" />
       <entry key="S60" value="0.0" />
       <entry key="M2" value="0.0" />
-      <entry key="M5" value="2.635906998134529E-156" />
-      <entry key="M10" value="1.6235476581038608E-78" />
-      <entry key="M15" value="1.3813700246652133E-52" />
-      <entry key="M30" value="1.1753169890141187E-26" />
-      <entry key="H1" value="1.084120375702864E-13" />
-      <entry key="H2" value="3.2925983291359184E-7" />
-      <entry key="H4" value="5.738116702486901E-4" />
-      <entry key="D1" value="0.28826697856454453" />
-      <entry key="W1" value="0.8371973448271763" />
+      <entry key="M5" value="1.839478218168064E-210" />
+      <entry key="M10" value="1.356273651652964E-105" />
+      <entry key="M15" value="1.2252692937144861E-70" />
+      <entry key="M30" value="1.1069188288734126E-35" />
+      <entry key="H1" value="3.327038967119882E-18" />
+      <entry key="H2" value="1.8240172606419824E-9" />
+      <entry key="H4" value="4.27085150835519E-5" />
+      <entry key="D1" value="0.18696159824608613" />
+      <entry key="W1" value="0.7869816938918222" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9395390877504036" />
-      <entry key="MS500" value="1.372295363073929" />
-      <entry key="S2" value="5.100090371558019" />
-      <entry key="S5" value="7.9497264883610805" />
-      <entry key="S10" value="9.326060449207256" />
-      <entry key="S30" value="10.404970898362317" />
-      <entry key="S60" value="10.703051507873719" />
-      <entry key="M2" value="11.092923755856827" />
-      <entry key="M5" value="13.341816936995958" />
-      <entry key="M10" value="16.11071751742688" />
-      <entry key="M15" value="17.604524145235537" />
-      <entry key="M30" value="19.526441221688447" />
-      <entry key="H1" value="20.685260278644623" />
-      <entry key="H2" value="21.32286648555922" />
-      <entry key="H4" value="21.76190289174608" />
-      <entry key="D1" value="42.682631532137144" />
-      <entry key="W1" value="80.72401282707874" />
+      <entry key="MS100" value="1.4063986748696078" />
+      <entry key="MS500" value="1.9545352096931992" />
+      <entry key="S2" value="3.169745850970044" />
+      <entry key="S5" value="4.050094993984969" />
+      <entry key="S10" value="4.477340612430938" />
+      <entry key="S30" value="4.813803930801529" />
+      <entry key="S60" value="4.905309150784946" />
+      <entry key="M2" value="4.9522487813849985" />
+      <entry key="M5" value="4.980801132531795" />
+      <entry key="M10" value="4.990384086382711" />
+      <entry key="M15" value="4.99358572253439" />
+      <entry key="M30" value="4.9967910448549615" />
+      <entry key="H1" value="4.999060548875994" />
+      <entry key="H2" value="5.122860518402578" />
+      <entry key="H4" value="6.693755703647332" />
+      <entry key="D1" value="33.33122047142573" />
+      <entry key="W1" value="81.8221428835688" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -102,6 +103,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Application.Unnamed.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RequestMappingsPanelOrder0": "0",
     "RequestMappingsPanelOrder1": "1",
@@ -116,10 +118,10 @@
     "Spring Boot.ClaimsAssistantApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "copilot.chat.legacySessionMetadata.migrated": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "feature/Rupali__RAG__Olama",
     "git.auto.fetch.suggestion.counter": "1",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/NWLS/WorkSpaces/claims-assistant",
+    "last_opened_file_path": "C:/NWLS/WorkSpaces/claimXpertAgent/claim-assistant-backend/logs/RAG_IbgestionPolicies",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -131,7 +133,22 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager">
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\NWLS\WorkSpaces\claimXpertAgent\claim-assistant-backend\logs\RAG_IbgestionPolicies" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Application.Unnamed">
+    <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../Program Files/Java/jdk-21.0.12.8" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="com.nextgen.claims.ClaimsAssistantApplication" />
+      <module name="claims-assistant" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/claim-assistant-backend" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="ClaimsAssistantApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="claims-assistant" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.nextgen.claims.ClaimsAssistantApplication" />
@@ -139,6 +156,10 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue="Application.Unnamed" />
+      <item itemvalue="Spring Boot.ClaimsAssistantApplication" />
+    </list>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -158,6 +179,7 @@
       <workItem from="1786428227248" duration="1244000" />
       <workItem from="1786429901494" duration="7757000" />
       <workItem from="1786444664150" duration="16441000" />
+      <workItem from="1786956659190" duration="7383000" />
     </task>
     <servers />
   </component>

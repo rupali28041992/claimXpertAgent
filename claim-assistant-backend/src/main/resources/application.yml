@@ -43,3 +43,10 @@ docvalidation:
     low-threshold: 0.60
   mongodb:
     policy-vector-index: policy_clause_vector_index
+  rag:
+    top-k: 4
+  decision:
+    max-ocr-chars-per-doc: 4000
+  ingestion:
+    enabled: false
+    medical-policy-path: logs/RAG_IngestionPolicies/Medical_Insurance_Policy_ClaimXpert.pdf

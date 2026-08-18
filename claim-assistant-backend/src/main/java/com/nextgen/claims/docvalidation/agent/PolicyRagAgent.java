@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
- * Answers: "what policy clause applies to this claim?" (Section 21 of the
+ * Answers: "what policy clauses apply to this claim?" (Section 21 of the
  * spec). Called ONCE per claim by ClaimOrchestrator (Section 23) - never
- * once per document.
+ * once per document. Returns the top-K most relevant clauses (not just one)
+ * so a claim-level decision can weigh multiple applicable sections together
+ * (e.g. hospitalisation rules AND a waiting-period exclusion at once).
  */
 @Slf4j
 @Component
@@ -22,18 +24,24 @@ public class PolicyRagAgent {
     private final EmbeddingService embeddingService;
     private final MongoVectorService mongoVectorService;
 
-    public PolicyClause findClause(String claimType, String claimReason) {
+    /** Never returns null - an empty list means nothing relevant was found. */
+    public List<PolicyClause> findRelevantClauses(String claimType, String claimReason, int topK) {
         String query = claimType + " " + claimReason;
         float[] embedding = embeddingService.generateEmbedding(query);
 
-        Optional<PolicyClause> clause = mongoVectorService.findNearestClause(embedding, claimType, claimReason);
+        List<PolicyClause> clauses = mongoVectorService.findTopKClauses(embedding, claimType, claimReason, topK);
 
-        if (clause.isEmpty()) {
-            log.info("[PolicyRagAgent] no clause found for claimType={} claimReason={}", claimType, claimReason);
-            return null;
+        if (clauses.isEmpty()) {
+            log.info("[PolicyRagAgent] no clauses found for claimType={} claimReason={}", claimType, claimReason);
+            return List.of();
         }
 
-        log.info("[PolicyRagAgent] clause={}", clause.get().getId());
-        return clause.get();
+        String summary = clauses.stream()
+                .map(c -> c.getClaimReason() + " (id=" + c.getId() + ")")
+                .reduce((a, b) -> a + "; " + b)
+                .orElse("");
+        log.info("[PolicyRagAgent] retrieved {} clauses for claimType={} claimReason={}: {}",
+                clauses.size(), claimType, claimReason, summary);
+        return clauses;
     }
 }

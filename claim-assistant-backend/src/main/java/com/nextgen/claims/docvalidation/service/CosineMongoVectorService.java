@@ -3,11 +3,11 @@ package com.nextgen.claims.docvalidation.service;
 import com.nextgen.claims.docvalidation.model.PolicyClause;
 import com.nextgen.claims.docvalidation.repository.PolicyClauseRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementation note (matching the existing
@@ -21,6 +21,7 @@ import java.util.Optional;
  * in Java. Swap the body for an Atlas $vectorSearch aggregation later
  * without touching PolicyRagAgent.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CosineMongoVectorService implements MongoVectorService {
@@ -28,20 +29,25 @@ public class CosineMongoVectorService implements MongoVectorService {
     private final PolicyClauseRepository repository;
 
     @Override
-    public Optional<PolicyClause> findNearestClause(float[] embedding, String claimType, String claimReason) {
+    public List<PolicyClause> findTopKClauses(float[] embedding, String claimType, String claimReason, int topK) {
         List<PolicyClause> candidates = repository.findByClaimTypeAndClaimReason(claimType, claimReason);
         if (candidates.isEmpty()) {
             candidates = repository.findByClaimType(claimType);
         }
         if (candidates.isEmpty()) {
-            return Optional.empty();
+            return List.of();
         }
 
         return candidates.stream()
-                .max(Comparator.comparingDouble(c -> cosineSimilarity(embedding, c.getEmbedding())));
+                .sorted(Comparator.comparingDouble((PolicyClause c) -> cosineSimilarity(embedding, c.getEmbedding())).reversed())
+                .limit(topK)
+                .toList();
     }
 
     private double cosineSimilarity(float[] a, List<Double> bList) {
+        if (a.length != bList.size()) {
+            log.warn("[CosineMongoVectorService] embedding dimension mismatch: query={} clause={}", a.length, bList.size());
+        }
         double dot = 0, normA = 0, normB = 0;
         for (int i = 0; i < a.length && i < bList.size(); i++) {
             double bVal = bList.get(i);

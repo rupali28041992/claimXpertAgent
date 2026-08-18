@@ -21,7 +21,9 @@ public class ClaimContext {
 
     private List<DocumentResult> documents = new ArrayList<>();
 
-    private PolicyClause policyClause;
+    private List<PolicyClause> policyClauses = new ArrayList<>();
+
+    private ClaimDecisionResult decision;
 
     private ClaimProcessingStatus status;
 

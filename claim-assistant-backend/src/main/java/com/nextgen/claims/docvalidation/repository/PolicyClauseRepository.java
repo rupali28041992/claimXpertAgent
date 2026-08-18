@@ -16,4 +16,7 @@ public interface PolicyClauseRepository extends MongoRepository<PolicyClause, St
     List<PolicyClause> findByClaimTypeAndClaimReason(String claimType, String claimReason);
 
     List<PolicyClause> findByClaimType(String claimType);
+
+    /** Scoped by sourceDocument too, so re-ingesting one PDF never wipes clauses ingested from another PDF of the same claimType. */
+    void deleteByClaimTypeAndSourceDocument(String claimType, String sourceDocument);
 }

@@ -33,6 +33,8 @@ public class ClaimEntity {
 
     private List<DocumentResult> documents;
 
+    private ClaimDecisionResult decision;
+
     private ClaimProcessingStatus status;
 
     private Instant createdAt;

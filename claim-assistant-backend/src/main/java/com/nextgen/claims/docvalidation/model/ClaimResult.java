@@ -16,4 +16,5 @@ public class ClaimResult {
     private String claimId;
     private ClaimProcessingStatus status;
     private List<DocumentResult> documents;
+    private ClaimDecisionResult decision;
 }

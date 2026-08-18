@@ -19,6 +19,9 @@ public class DocValidationProperties {
     private Document document = new Document();
     private Relevance relevance = new Relevance();
     private Mongodb mongodb = new Mongodb();
+    private Rag rag = new Rag();
+    private Decision decision = new Decision();
+    private Ingestion ingestion = new Ingestion();
 
     @Data
     public static class Document {
@@ -35,5 +38,21 @@ public class DocValidationProperties {
     @Data
     public static class Mongodb {
         private String policyVectorIndex = "policy_clause_vector_index";
+    }
+
+    @Data
+    public static class Rag {
+        private int topK = 4;
+    }
+
+    @Data
+    public static class Decision {
+        private int maxOcrCharsPerDoc = 4000;
+    }
+
+    @Data
+    public static class Ingestion {
+        private boolean enabled = false;
+        private String medicalPolicyPath = "logs/RAG_IngestionPolicies/Medical_Insurance_Policy_ClaimXpert.pdf";
     }
 }

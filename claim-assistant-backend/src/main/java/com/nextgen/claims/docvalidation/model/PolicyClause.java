@@ -29,4 +29,7 @@ public class PolicyClause {
     private String claimReason;
     private String clauseText;
     private List<Double> embedding;
+
+    /** Which source PDF this clause was ingested from, e.g. "Medical_Insurance_Policy_ClaimXpert.pdf" - scopes re-ingestion deletes so ingesting one document never wipes clauses ingested from another. */
+    private String sourceDocument;
 }
