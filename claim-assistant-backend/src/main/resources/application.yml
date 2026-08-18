@@ -41,6 +41,13 @@ claims:
   # below this average confidence -> UNDER_REVIEW regardless of the per-document verdicts.
   decision:
     confidence-threshold: 0.65
+  # PolicyClauseSeeder: productType -> classpath PDF filename to seed policy_clause_vectors
+  # from at startup (once per productType - skipped if that productType already has clauses).
+  # Add a new product's policy PDF here, not in Java code.
+  policy-seed:
+    pdfs:
+      MEDICAL: medical_claims_policy.pdf
+      TRAVEL: travel_claims_policy.pdf
 
 # POST /api/claims multi-agent pipeline (ClaimOrchestrator / DocumentAgent / DocumentRelevanceAgent).
 document:
