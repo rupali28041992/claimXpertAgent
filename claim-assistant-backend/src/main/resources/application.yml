@@ -11,7 +11,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/claims_assistant
+      uri: mongodb+srv://sumathiatk_db_user:RgMAx9khPIVoic5Y@claimxpert.1z43iyi.mongodb.net/claims_assistant
 
   ai:
     ollama:

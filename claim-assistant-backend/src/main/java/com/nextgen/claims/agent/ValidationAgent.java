@@ -3,6 +3,7 @@ package com.nextgen.claims.agent;
 import com.nextgen.claims.model.ClaimAnswer;
 import com.nextgen.claims.model.PolicyClauseVector;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,11 +26,13 @@ import java.util.stream.IntStream;
  * ClaimService) and pass them in, instead of this class re-running the RAG
  * lookup for every single document.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ValidationAgent {
 
     private final ChatClient chatClient;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     // Overrides the app-wide chat model (qwen3.5:9b, a "thinking" model - slow and, in
     // this Spring AI version, has no API to disable reasoning) with a small non-thinking
@@ -127,7 +130,7 @@ public class ValidationAgent {
                 .numPredict(2048)
                 .build();
 
-        return chatClient.prompt()
+        String raw = chatClient.prompt()
                 .user(u -> u
                         .text(template)
                         .param("conditionsBlock", conditionsBlock)
@@ -136,7 +139,42 @@ public class ValidationAgent {
                         .param("extractedFields", extractedFields))
                 .options(options)
                 .call()
-                .entity(ValidationResult.class);
+                .content();
+
+        // Parse the raw JSON into a tree first to let Jackson collapse any duplicate keys
+        log.debug("ValidationAgent raw response: {}", raw);
+        try {
+            com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(raw);
+            if (node.isObject()) {
+                com.fasterxml.jackson.databind.node.ObjectNode obj = (com.fasterxml.jackson.databind.node.ObjectNode) node;
+                if (!obj.has("confidence")) obj.put("confidence", 0.0);
+                if (!obj.has("decision")) obj.put("decision", "INVESTIGATE");
+                if (!obj.has("explanation")) obj.put("explanation", "");
+                if (!obj.has("flags")) obj.set("flags", objectMapper.createArrayNode());
+                if (!obj.has("conditionChecks")) obj.set("conditionChecks", objectMapper.createArrayNode());
+                // ensure conditionChecks is an array
+                if (obj.has("conditionChecks") && !obj.get("conditionChecks").isArray()) {
+                    com.fasterxml.jackson.databind.node.ArrayNode arr = objectMapper.createArrayNode();
+                    arr.add(obj.get("conditionChecks").asText());
+                    obj.set("conditionChecks", arr);
+                }
+            } else {
+                // Wrap non-object response into a predictable object
+                com.fasterxml.jackson.databind.node.ObjectNode wrapper = objectMapper.createObjectNode();
+                wrapper.set("response", node);
+                wrapper.put("confidence", 0.0);
+                wrapper.put("decision", "INVESTIGATE");
+                wrapper.put("explanation", "");
+                wrapper.set("flags", objectMapper.createArrayNode());
+                wrapper.set("conditionChecks", objectMapper.createArrayNode());
+                node = wrapper;
+            }
+            ValidationResult vr = objectMapper.treeToValue(node, ValidationResult.class);
+            return vr;
+        } catch (Exception ex) {
+            log.error("Failed to parse validation agent response. Raw: {}", raw, ex);
+            throw new RuntimeException("Failed to parse validation agent response: " + raw, ex);
+        }
     }
 
     private String formatMap(Map<String, String> map) {
