@@ -7,13 +7,13 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/claims_assistant
+      uri: mongodb+srv://rupalijain046_db_user:zPb8Ru3wjmMZzVpt@cluster0.6hlivfs.mongodb.net/claims_assistant
 
   ai:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: llama3.2
+        model: qwen3.5:2b
       embedding:
         model: nomic-embed-text
 
