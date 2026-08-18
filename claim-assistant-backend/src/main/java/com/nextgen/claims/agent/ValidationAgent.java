@@ -2,7 +2,6 @@ package com.nextgen.claims.agent;
 
 import com.nextgen.claims.model.ClaimAnswer;
 import com.nextgen.claims.model.PolicyClauseVector;
-import com.nextgen.claims.rag.PolicyClauseRetriever;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.ollama.api.OllamaOptions;
@@ -19,13 +18,18 @@ import java.util.stream.IntStream;
  * per uploaded file that passed the plain Java checks in Step 2b. Never
  * decides approve/reject itself - it only reports flags that the Java
  * readiness-score formula and GoRules consume afterwards.
+ *
+ * Also reused by the ClaimOrchestrator (POST /api/claims) pipeline as its
+ * "Validation Agent" - decision==APPROVE maps to clauseSatisfied there.
+ * Callers fetch policy clauses ONCE per claim (see PolicyRagAgent /
+ * ClaimService) and pass them in, instead of this class re-running the RAG
+ * lookup for every single document.
  */
 @Component
 @RequiredArgsConstructor
 public class ValidationAgent {
 
     private final ChatClient chatClient;
-    private final PolicyClauseRetriever policyClauseRetriever;
 
     // Overrides the app-wide chat model (qwen3.5:9b, a "thinking" model - slow and, in
     // this Spring AI version, has no API to disable reasoning) with a small non-thinking
@@ -34,13 +38,12 @@ public class ValidationAgent {
     @Value("${claims.validation.model:qwen2.5:3b}")
     private String validationModel;
 
-    public ValidationResult validate(String claimType,
+    public ValidationResult validate(List<PolicyClauseVector> clauses,
+                                      String claimType,
                                       String claimReason,
                                       String ocrText,
                                       Map<String, String> extractedFields,
                                       List<ClaimAnswer> claimAnswers) {
-
-        List<PolicyClauseVector> clauses = policyClauseRetriever.retrieveRelevantClauses(claimType, claimReason);
 
         // Top-3 conditions numbered with section header so the LLM knows which clause applies
         String conditionsBlock = clauses.isEmpty()
@@ -98,6 +101,7 @@ public class ValidationAgent {
                              "mismatch:hospitalName"
                            Empty list if nothing is wrong.
                   explanation — one paragraph summarising the overall finding for a claims handler.
+                  confidence — your overall confidence in this decision, a number between 0 and 1.
 
                 Return ONLY valid JSON matching this exact structure — no extra text:
                 {
@@ -108,7 +112,8 @@ public class ValidationAgent {
                   ],
                   "decision": "APPROVE" | "REJECT" | "INVESTIGATE",
                   "flags": ["...", "..."],
-                  "explanation": "..."
+                  "explanation": "...",
+                  "confidence": 0.0
                 }
                 """;
 

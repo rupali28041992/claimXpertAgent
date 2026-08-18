@@ -1,8 +1,11 @@
 package com.nextgen.claims.controller;
 
+import com.nextgen.claims.agent.ClaimOrchestrator;
 import com.nextgen.claims.agent.IntentClassificationAgent;
 import com.nextgen.claims.dto.ClaimClassifyRequest;
 import com.nextgen.claims.dto.ClaimClassifyResponse;
+import com.nextgen.claims.dto.ClaimRequest;
+import com.nextgen.claims.dto.ClaimResult;
 import com.nextgen.claims.dto.ClaimSubmitRequest;
 import com.nextgen.claims.dto.DictionaryEntry;
 import com.nextgen.claims.dto.ClaimSubmitResponse;
@@ -16,6 +19,7 @@ import com.nextgen.claims.rules.ClaimTypeConfig;
 import com.nextgen.claims.rules.RulesEngineService;
 import com.nextgen.claims.service.ClaimService;
 import com.nextgen.claims.service.PolicyService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -37,6 +41,7 @@ import java.util.Map;
 public class ClaimController {
 
     private final ClaimService claimService;
+    private final ClaimOrchestrator claimOrchestrator;
     private final IntentClassificationAgent intentClassificationAgent;
     private final RulesEngineService rulesEngineService;
     private final PolicyService policyService;
@@ -124,5 +129,27 @@ public class ClaimController {
     @GetMapping("/{claimId}")
     public Claim getClaim(@PathVariable String claimId) {
         return claimService.getClaim(claimId);
+    }
+
+    /**
+     * Multi-agent document validation pipeline: file validation + OCR (deterministic,
+     * no Ollama) -> document relevance (embedding similarity, Ollama only for borderline
+     * cases) -> policy RAG lookup (once per claim) -> validation against the matched
+     * policy clause and the customer's answers. See ClaimOrchestrator for the full flow.
+     *
+     * multipart/form-data parts: claimType, claimReason, answers (JSON string, optional), files.
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ClaimResult submitClaim(@RequestParam String claimType,
+                                    @RequestParam String claimReason,
+                                    @RequestParam(required = false) String answers,
+                                    @RequestPart("files") List<MultipartFile> files) throws Exception {
+        ClaimRequest request = new ClaimRequest();
+        request.setClaimType(claimType);
+        request.setClaimReason(claimReason);
+        request.setAnswers((answers == null || answers.isBlank())
+                ? Map.of()
+                : objectMapper.readValue(answers, new TypeReference<Map<String, Object>>() {}));
+        return claimOrchestrator.process(request, files);
     }
 }

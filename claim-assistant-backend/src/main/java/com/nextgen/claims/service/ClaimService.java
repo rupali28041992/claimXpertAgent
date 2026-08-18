@@ -7,7 +7,9 @@ import com.nextgen.claims.dto.ClaimSubmitResponse;
 import com.nextgen.claims.model.Claim;
 import com.nextgen.claims.model.ClaimDocument;
 import com.nextgen.claims.model.ClaimStatus;
+import com.nextgen.claims.model.PolicyClauseVector;
 import com.nextgen.claims.model.StatusChange;
+import com.nextgen.claims.rag.PolicyClauseRetriever;
 import com.nextgen.claims.repository.ClaimRepository;
 import com.nextgen.claims.rules.ReadinessScoreCalculator;
 import com.nextgen.claims.rules.RulesEngineService;
@@ -35,6 +37,7 @@ public class ClaimService {
     private final OcrExtractionService ocrExtractionService;
     private final FileStorageService fileStorageService;
     private final ValidationAgent validationAgent;
+    private final PolicyClauseRetriever policyClauseRetriever;
     private final RulesEngineService rulesEngineService;
     private final ReadinessScoreCalculator readinessScoreCalculator;
 
@@ -42,6 +45,11 @@ public class ClaimService {
 
         // Step 1
         String claimId = "clm_" + UUID.randomUUID().toString().substring(0, 8);
+
+        // RAG lookup ONCE per claim (claimType/claimReason are constant across all files),
+        // reused below instead of re-querying per document.
+        List<PolicyClauseVector> clauses =
+                policyClauseRetriever.retrieveRelevantClauses(request.getClaimType(), request.getClaimReason());
 
         // Step 2: per file - OCR, cheap checks, then Validation Agent (AI + RAG)
         List<ClaimDocument> documents = new ArrayList<>();
@@ -58,6 +66,7 @@ public class ClaimService {
             String fileRef = fileStorageService.store(file);
 
             ValidationResult validation = validationAgent.validate(
+                    clauses,
                     request.getClaimType(),
                     request.getClaimReason(),
                     extraction.text(),

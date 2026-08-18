@@ -1,5 +1,6 @@
 package com.nextgen.claims.model;
 
+import com.nextgen.claims.dto.ClaimDecision;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,6 +42,16 @@ public class Claim {
 
     private ClaimStatus status;
     private List<StatusChange> statusHistory;
+
+    // Pipeline status for the POST /api/claims multi-agent flow (ClaimOrchestrator):
+    // RECEIVED / PROCESSING / COMPLETED / PARTIALLY_COMPLETED / FAILED. Independent of
+    // `status` above, which is the adjuster-facing adjudication status for the wizard flow.
+    private String processingStatus;
+
+    // ClaimDecisionAgent's claim-level verdict for the POST /api/claims flow. `status`
+    // above is set from finalDecision.verdict (AUTO_APPROVED/AUTO_REJECTED/UNDER_REVIEW)
+    // so the existing adjuster ReviewController can act on it exactly like a wizard claim.
+    private ClaimDecision finalDecision;
 
     private Instant createdAt;
 }

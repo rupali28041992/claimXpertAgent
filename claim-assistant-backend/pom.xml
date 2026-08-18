@@ -82,11 +82,22 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- PDF text extraction for RAG ingestion pipeline -->
+        <!-- PDF text extraction for RAG ingestion pipeline, also reused for claim-document OCR -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>3.0.3</version>
+        </dependency>
+
+        <!-- Tesseract OCR (deterministic, non-AI) fallback for scanned PDFs / image uploads
+             in OcrExtractionService, used only when PDFBox finds no text layer. Requires the
+             native Tesseract engine + tessdata installed on the host (tesseract.datapath /
+             tesseract.language in application.yml); missing/unconfigured native install
+             degrades to OCR_FAILED for that document instead of breaking the build/app. -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.11.0</version>
         </dependency>
 
         <dependency>

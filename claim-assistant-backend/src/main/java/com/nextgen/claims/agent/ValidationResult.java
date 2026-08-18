@@ -18,12 +18,15 @@ import java.util.List;
  *                   e.g. "clause_conflict:[1]:min_24h_admission", "mismatch:hospitalName"
  *
  * explanation     — one-paragraph summary for the claims handler
+ *
+ * confidence      — overall confidence (0-1) in `decision`, across all conditions
  */
 public record ValidationResult(
         List<ConditionCheck> conditionChecks,
         String decision,
         List<String> flags,
-        String explanation
+        String explanation,
+        double confidence
 ) {
     /**
      * Per-condition verdict. The LLM fills one of these for each of the
