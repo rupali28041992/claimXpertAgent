@@ -44,7 +44,9 @@ claims:
   # PolicyClauseSeeder: productType -> classpath PDF filename to seed policy_clause_vectors
   # from at startup (once per productType - skipped if that productType already has clauses).
   # Add a new product's policy PDF here, not in Java code.
+  # Set enabled: false once ingestion is done and you don't want this running at all anymore.
   policy-seed:
+    enabled: true
     pdfs:
       MEDICAL: medical_claims_policy.pdf
       TRAVEL: travel_claims_policy.pdf

@@ -32,6 +32,10 @@ public class PolicyClauseSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!policySeedProperties.isEnabled()) {
+            log.info("PolicyClauseSeeder disabled (claims.policy-seed.enabled=false) - skipping.");
+            return;
+        }
         policySeedProperties.getPdfs().forEach(this::seedProductType);
     }
 

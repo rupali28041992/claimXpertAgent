@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Answers ONE question: "is this uploaded document actually about this
@@ -191,8 +192,23 @@ public class DocumentRelevanceAgent {
                   "confidence": 0.0,
                   "reason": "..."
                 }
-                """.formatted(claimType, claimReason, answers == null ? "(none)" : answers,
+                """.formatted(claimType, claimReason, formatAnswers(answers),
                 String.join(", ", expected), truncate(ocrText, 4000), documentType);
+    }
+
+    /**
+     * Never returns a Map's raw toString() - an empty map's "{}" (or any "{...}") baked
+     * into a prompt string via String.formatted() gets misparsed by Spring AI's template
+     * engine before the request ever reaches Ollama (the same failure mode ValidationAgent's
+     * .param()-based prompt building avoids). Plain "key: value" lines are always safe.
+     */
+    private String formatAnswers(Map<String, Object> answers) {
+        if (answers == null || answers.isEmpty()) {
+            return "(none)";
+        }
+        return answers.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining("\n"));
     }
 
     private String truncate(String text, int max) {
