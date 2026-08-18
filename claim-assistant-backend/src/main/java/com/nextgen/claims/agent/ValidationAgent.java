@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The ONLY mandatory AI + RAG step in the whole flow (Step 2c). Runs once
@@ -41,46 +42,76 @@ public class ValidationAgent {
 
         List<PolicyClauseVector> clauses = policyClauseRetriever.retrieveRelevantClauses(claimType, claimReason);
 
-        String clauseText = clauses.isEmpty()
-                ? "No specific policy clause found for this claim type."
-                : clauses.stream().map(PolicyClauseVector::getClauseText).collect(Collectors.joining("\n---\n"));
+        // Top-3 conditions numbered with section header so the LLM knows which clause applies
+        String conditionsBlock = clauses.isEmpty()
+                ? "No specific policy conditions found for this claim type."
+                : IntStream.range(0, clauses.size())
+                        .mapToObj(i -> String.format("[%d] %s%n%s",
+                                i + 1,
+                                clauses.get(i).getSection(),
+                                clauses.get(i).getClauseText()))
+                        .collect(Collectors.joining("\n\n"));
 
-        String answersText = claimAnswers == null ? "" : claimAnswers.stream()
-                .map(a -> a.getQuestionId() + ": " + a.getAnswerText())
-                .collect(Collectors.joining("\n"));
+        // Claim details: type + reason + every answer the customer gave in the questionnaire
+        String claimDetails = "Claim Type  : " + claimType + "\n"
+                + "Claim Reason: " + claimReason + "\n"
+                + (claimAnswers == null || claimAnswers.isEmpty() ? "" :
+                        claimAnswers.stream()
+                                .map(a -> a.getQuestionId() + ": " + a.getAnswerText())
+                                .collect(Collectors.joining("\n")));
 
-        // NOTE: dynamic values must NOT be baked into the template string (e.g. via
-        // String.formatted/concatenation). ChatClient.user(String) renders the text through
-        // Spring AI's PromptTemplate, which wraps an ST4 (StringTemplate 4) template using
-        // '{' and '}' as the expression delimiters. If a value such as extractedFields.toString()
-        // (which renders as the literal "{}" for an empty map) is embedded in the raw string
-        // before it reaches .user(...), ST4 re-parses those braces as template expressions and
-        // throws STException. Passing each dynamic value through .param(...) instead makes ST4
-        // substitute it as a literal attribute value, never re-lexed as template syntax.
+        // NOTE: values are passed via .param() so Spring AI's ST4 template engine
+        // never re-parses them as template expressions (avoids STException on values
+        // like "{}" from an empty map toString).
         String template = """
-                You are validating one uploaded claim document against the insurer's policy wording.
+                You are a claims validation assistant. A customer has submitted an insurance claim.
 
-                POLICY CLAUSE(S):
-                {clauseText}
+                TOP 3 POLICY CONDITIONS APPLICABLE TO THIS CLAIM:
+                {conditionsBlock}
 
-                DOCUMENT TEXT (OCR extracted):
+                CUSTOMER CLAIM DETAILS:
+                {claimDetails}
+
+                DOCUMENT TEXT (OCR extracted from uploaded file):
                 {ocrText}
 
-                EXTRACTED FIELDS FROM DOCUMENT:
+                FIELDS EXTRACTED FROM DOCUMENT:
                 {extractedFields}
 
-                ANSWERS THE CUSTOMER TYPED IN THE FORM:
-                {answersText}
+                INSTRUCTIONS:
+                Evaluate each of the 3 policy conditions independently against the claim details
+                and the uploaded document. For EACH condition decide:
+                  - satisfied: true if the claim/document fully meets this condition, false if not
+                  - finding: one sentence stating exactly what passes or what specifically fails
 
-                Check two things only:
-                1. Does anything in the document contradict or fail to satisfy the policy clause(s) above
-                   (e.g. a waiting-period or exclusion violation)?
-                2. Does any extracted field meaningfully mismatch what the customer typed
-                   (e.g. a different hospital/garage name, date, or amount - ignore trivial spelling/formatting differences)?
+                Then, based on all 3 condition results, give an overall decision:
+                  APPROVE      — all 3 conditions satisfied and no field mismatches found
+                  REJECT       — at least one condition is clearly violated
+                  INVESTIGATE  — information is ambiguous or a field mismatch needs human review
 
-                Respond with flags as short machine-readable codes, e.g. "mismatch:hospitalName" or
-                "clause_conflict:waiting_period". Return an empty flags list if nothing is wrong.
-                """.formatted(clauseText, ocrText, formatMap(extractedFields), answersText);
+                Also return:
+                  flags  — machine-readable codes for each problem found, referencing the condition
+                           number in brackets, e.g.:
+                             "clause_conflict:[1]:min_24h_admission"
+                             "clause_conflict:[2]:missing_discharge_summary"
+                             "clause_conflict:[3]:no_preauth_cashless"
+                             "mismatch:hospitalName"
+                           Empty list if nothing is wrong.
+                  explanation — one paragraph summarising the overall finding for a claims handler.
+
+                Return ONLY valid JSON matching this exact structure — no extra text:
+                {
+                  "conditionChecks": [
+                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" },
+                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" },
+                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" }
+                  ],
+                  "decision": "APPROVE" | "REJECT" | "INVESTIGATE",
+                  "flags": ["...", "..."],
+                  "explanation": "..."
+                }
+                """;
+
 
         // qwen3.5:9b is a "thinking" model - Spring AI 1.0.0-M6 has no API to disable
         // that (no think/disableThinking() on OllamaOptions in this version), so a
@@ -98,10 +129,10 @@ public class ValidationAgent {
         return chatClient.prompt()
                 .user(u -> u
                         .text(template)
-                        .param("clauseText", clauseText)
+                        .param("conditionsBlock", conditionsBlock)
+                        .param("claimDetails", claimDetails)
                         .param("ocrText", ocrText)
-                        .param("extractedFields", extractedFields)
-                        .param("answersText", answersText))
+                        .param("extractedFields", extractedFields))
                 .options(options)
                 .call()
                 .entity(ValidationResult.class);

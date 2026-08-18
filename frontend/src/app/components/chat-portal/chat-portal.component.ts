@@ -71,6 +71,7 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   policyNumber = '';
   policyCheckState: 'idle' | 'checking' | 'found' | 'not-found' = 'idle';
   verifiedPolicyId = '';
+  verifiedHolderName = '';
 
   today = new Date().toISOString().split('T')[0];
   private shouldScroll = false;
@@ -398,6 +399,7 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
       next: res => {
         if (res.valid) {
           this.verifiedPolicyId = res.policyId;
+          this.verifiedHolderName = res.holderName || '';
           this.policyCheckState = 'found';
         } else {
           this.policyCheckState = 'not-found';

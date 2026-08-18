@@ -19,7 +19,7 @@ spring:
       chat:
         model: qwen2.5:7b-instruct-q4_K_M
       embedding:
-        model: bge-m3
+        model: nomic-embed-text
 
 # Simple threshold config for GoRules-style routing until the real
 # GoRules SDK/table is wired in. Swap RulesEngineService's internals

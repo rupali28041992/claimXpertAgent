@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/policies")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "${claims.cors.allowed-origin:http://localhost:4200}")
 public class PolicyController {
 
@@ -16,18 +17,20 @@ public class PolicyController {
 
     @GetMapping("/{policyId}/verify")
     public PolicyVerifyResponse verifyPolicy(@PathVariable String policyId) {
-        // Accepts formats like POL-1234, INSCO-AB9901, HC-200456 (2-6 letters, dash, 4+ alphanumeric)
-        boolean valid = policyId != null
-                && policyId.matches("(?i)^[A-Z]{2,6}-[A-Z0-9]{4,}$");
-        if (valid) {
+        try {
+            var lookup = policyService.lookup(policyId);
             return PolicyVerifyResponse.builder()
                     .valid(true)
-                    .policyId(policyId.toUpperCase())
-                    .holderName("Valued Policyholder")
+                    .policyId(lookup.getPolicyId())
+                    .holderName(lookup.getPolicyholderName())
                     .status("ACTIVE")
                     .build();
+        } catch (IllegalArgumentException e) {
+            return PolicyVerifyResponse.builder()
+                    .valid(false)
+                    .policyId(policyId)
+                    .build();
         }
-        return PolicyVerifyResponse.builder().valid(false).policyId(policyId).build();
     }
 
     @PostMapping

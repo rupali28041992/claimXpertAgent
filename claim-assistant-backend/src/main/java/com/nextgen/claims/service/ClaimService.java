@@ -77,7 +77,7 @@ public class ClaimService {
                     .ocrText(extraction.text())
                     .extractedFields(extraction.fields())
                     .flags(validation.flags())
-                    .clauseSatisfied(validation.clauseSatisfied())
+                    .clauseSatisfied("APPROVE".equals(validation.decision()))
                     .build());
         }
 
