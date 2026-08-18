@@ -25,10 +25,13 @@ public class PdfIngestionService {
     private final PolicyClauseVectorRepository repository;
     private final EmbeddingModel embeddingModel;
 
-    // Case-insensitive: matches "Section 4.1", "SECTION 4.1", "Section 10.2 – Title", etc.
-    // Group 1 = section number (e.g. "4.1"), Group 2 = optional inline title after dash
+    // Case-insensitive; matches BOTH real-world numbering conventions seen across policy
+    // PDFs: colon-style "Section 1: Hospitalization Claims" (the bundled sample PDFs) and
+    // dot-style "Section 4.1 – In-patient Hospitalisation" (used by some uploaded policies),
+    // with or without a separator at all ("Section 5 Maternity Claims").
+    // Group 1 = section number (e.g. "1" or "4.1"), Group 2 = inline title on the same line (may be empty)
     private static final Pattern SECTION_PATTERN = Pattern.compile(
-            "^(?:Section|SECTION)\\s+(\\d+\\.\\d+)(?:\\s*[\\u2013\\u2014\\-]\\s*(.+))?$",
+            "^(?:Section|SECTION)\\s+(\\d+(?:\\.\\d+)?)\\s*[:\\u2013\\u2014\\-]?\\s*(.*)$",
             Pattern.MULTILINE
     );
 
@@ -110,7 +113,7 @@ public class PdfIngestionService {
         }
 
         if (hits.isEmpty()) {
-            log.warn("No 'Section X.X' headers found in extracted PDF text — check PDF format");
+            log.warn("No 'Section N' or 'Section N.M' headers found in extracted PDF text — check PDF format");
             return List.of();
         }
 
