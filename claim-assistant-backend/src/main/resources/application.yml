@@ -32,6 +32,9 @@ claims:
 # Separate "docvalidation.*" prefix so nothing here collides with the
 # "claims.*" keys above used by the existing /api/claims/submit flow.
 docvalidation:
+  ingestion:
+    enabled: true
+    medical-policy-path: RAG_IngestionPolicyPdfs/Medical_Insurance_Policy_ClaimXpert.pdf
   document:
     max-file-size: 10485760
     allowed-mime-types:
@@ -47,6 +50,3 @@ docvalidation:
     top-k: 4
   decision:
     max-ocr-chars-per-doc: 4000
-  ingestion:
-    enabled: false
-    medical-policy-path: logs/RAG_IngestionPolicies/Medical_Insurance_Policy_ClaimXpert.pdf
