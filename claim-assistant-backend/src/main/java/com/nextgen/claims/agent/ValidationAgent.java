@@ -103,18 +103,14 @@ public class ValidationAgent {
                   explanation — one paragraph summarising the overall finding for a claims handler.
                   confidence — your overall confidence in this decision, a number between 0 and 1.
 
-                Return ONLY valid JSON matching this exact structure — no extra text:
-                {
-                  "conditionChecks": [
-                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" },
-                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" },
-                    { "condition": "<section label>", "satisfied": true/false, "finding": "<one sentence>" }
-                  ],
-                  "decision": "APPROVE" | "REJECT" | "INVESTIGATE",
-                  "flags": ["...", "..."],
-                  "explanation": "...",
-                  "confidence": 0.0
-                }
+                Return valid JSON with these exact fields:
+                - conditionChecks: an array of exactly 3 objects, one per policy condition above,
+                  each with fields condition (the section label), satisfied (true or false), and
+                  finding (one sentence).
+                - decision: one of APPROVE, REJECT, or INVESTIGATE, per the rules above.
+                - flags: an array of the flag strings described above, or an empty array if none.
+                - explanation: one paragraph summary, as a plain string.
+                - confidence: a number between 0 and 1.
                 """;
 
 
