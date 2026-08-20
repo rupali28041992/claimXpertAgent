@@ -18,10 +18,14 @@ import java.util.UUID;
 
 /**
  * Coordinates the complete workflow: generate claimId -> per-file
- * DocumentAgent processing (file validation + OCR, independent failures)
- * -> ONE PolicyRagAgent lookup for the whole claim (top-K clauses, no LLM
- * call) -> ONE ClaimDecisionAgent call (the only LLM call in this flow) ->
- * return result. No Mongo write happens here - nothing is persisted.
+ * DocumentAgent processing (file validation + OCR + relevance, independent
+ * failures) -> ONE PolicyRagAgent lookup for the whole claim (top-K
+ * clauses, no LLM call) -> ONE ClaimDecisionAgent call (the only LLM call
+ * in this flow) -> return result. The RAG lookup is skipped entirely when
+ * no document survived DocumentAgent as valid - there is nothing for
+ * retrieved clauses to be decided against, so it would just be a wasted
+ * Ollama embedding call. No Mongo write happens here - nothing is
+ * persisted.
  */
 @Slf4j
 @Component
@@ -46,9 +50,16 @@ public class ClaimOrchestrator {
         }
 
         // STEP 4: ONE policy lookup for the whole claim, not per document - no LLM call, pure retrieval.
-        List<PolicyClause> clauses = policyRagAgent.findRelevantClauses(
-                context.getClaimType(), context.getClaimReason(), properties.getRag().getTopK());
-        context.setPolicyClauses(clauses);
+        // Skipped when no document survived as valid: no point retrieving clauses to
+        // decide against when there is nothing left to decide over.
+        boolean hasValidDocument = context.getDocuments().stream().anyMatch(DocumentResult::isValid);
+        if (hasValidDocument) {
+            List<PolicyClause> clauses = policyRagAgent.findRelevantClauses(
+                    context.getClaimType(), context.getClaimReason(), properties.getRag().getTopK());
+            context.setPolicyClauses(clauses);
+        } else {
+            log.info("[ClaimOrchestrator] claim={} skipping RAG lookup - no valid documents", context.getClaimId());
+        }
 
         // STEP 5: the one and only LLM call - final decision over all valid documents + retrieved clauses together.
         context.setDecision(claimDecisionAgent.decide(context));
