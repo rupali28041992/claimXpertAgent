@@ -7,7 +7,12 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/** Per-file outcome, nested inside ClaimContext/ClaimResult (Section 27 of the spec). */
+/**
+ * Per-file outcome, nested inside ClaimContext/ClaimResult. Only file
+ * validation and OCR happen per document now - relevance and per-document
+ * clause validation were folded into ClaimDecisionAgent's single call, so
+ * there are no relevance/validation fields here anymore.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,14 +24,6 @@ public class DocumentResult {
     private List<String> errors;
 
     private String ocrText;
-    private String documentType;
-
-    private boolean relevant;
-    private Double relevanceConfidence;
-    private Double similarityScore;
-    private String relevanceReason;
-
-    private ValidationResult validationResult;
 
     private DocumentStatus status;
 }

@@ -15,13 +15,12 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Final claim-level reasoning step - ONE Ollama call per claim, not per
- * document. Combines every relevant document's OCR text and per-document
- * ValidationResult with the top-K retrieved policy clauses (PolicyRagAgent)
- * and decides APPROVED / REJECTED / MANUAL_REVIEW. Called once by
- * ClaimOrchestrator, after the per-document validation loop. Unlike
- * DocumentValidationAgent (which deliberately never decides approval),
- * this agent owns the final outcome.
+ * The ONLY LLM call in the whole submit flow - one Ollama call per claim.
+ * Relevance judgment and per-document clause-satisfaction checking used to
+ * be separate LLM calls (DocumentRelevanceAgent, DocumentValidationAgent);
+ * both are folded into this single prompt now, for latency - fewer
+ * sequential round trips to a local model. Called once by
+ * ClaimOrchestrator, after OCR has run for every uploaded file.
  */
 @Slf4j
 @Component
@@ -32,26 +31,26 @@ public class ClaimDecisionAgent {
     private final DocValidationProperties properties;
 
     public ClaimDecisionResult decide(ClaimContext context) {
-        List<DocumentResult> relevantDocuments = context.getDocuments().stream()
-                .filter(d -> d.isValid() && d.isRelevant())
+        List<DocumentResult> validDocuments = context.getDocuments().stream()
+                .filter(DocumentResult::isValid)
                 .toList();
         List<PolicyClause> clauses = context.getPolicyClauses() == null ? List.of() : context.getPolicyClauses();
 
-        if (relevantDocuments.isEmpty() || clauses.isEmpty()) {
-            log.info("[ClaimDecisionAgent] claim={} short-circuit to MANUAL_REVIEW: relevantDocuments={} clauses={}",
-                    context.getClaimId(), relevantDocuments.size(), clauses.size());
+        if (validDocuments.isEmpty() || clauses.isEmpty()) {
+            log.info("[ClaimDecisionAgent] claim={} short-circuit to MANUAL_REVIEW: validDocuments={} clauses={}",
+                    context.getClaimId(), validDocuments.size(), clauses.size());
             return logAndReturn(context, ClaimDecisionResult.builder()
                     .decision(ClaimDecisionStatus.MANUAL_REVIEW)
                     .conditions(List.of())
                     .matchedClauses(List.of())
                     .confidence(0.0)
-                    .reason(relevantDocuments.isEmpty()
-                            ? "No valid, relevant documents were submitted for this claim."
+                    .reason(validDocuments.isEmpty()
+                            ? "No valid documents were submitted for this claim."
                             : "No applicable policy clause could be retrieved for this claim.")
                     .build());
         }
 
-        String prompt = buildPrompt(context, relevantDocuments, clauses);
+        String prompt = buildPrompt(context, validDocuments, clauses);
 
         try {
             ClaimDecisionResult result = ollamaService.generateStructured(prompt, ClaimDecisionResult.class);
@@ -69,25 +68,18 @@ public class ClaimDecisionAgent {
         }
     }
 
-    private String buildPrompt(ClaimContext context, List<DocumentResult> relevantDocuments, List<PolicyClause> clauses) {
+    private String buildPrompt(ClaimContext context, List<DocumentResult> validDocuments, List<PolicyClause> clauses) {
         int maxOcrChars = properties.getDecision().getMaxOcrCharsPerDoc();
 
         StringBuilder documentsBlock = new StringBuilder();
-        for (DocumentResult document : relevantDocuments) {
+        for (DocumentResult document : validDocuments) {
             String ocrText = document.getOcrText() == null ? "" : document.getOcrText();
             if (ocrText.length() > maxOcrChars) {
                 ocrText = ocrText.substring(0, maxOcrChars) + "...(truncated)";
             }
             documentsBlock.append("Document: ").append(document.getFileName())
-                    .append("\nDocument Type: ").append(document.getDocumentType())
-                    .append("\nOCR Text:\n").append(ocrText);
-            if (document.getValidationResult() != null) {
-                documentsBlock.append("\nPer-document validation: clauseSatisfied=")
-                        .append(document.getValidationResult().isClauseSatisfied())
-                        .append(", flags=").append(document.getValidationResult().getFlags())
-                        .append(", reason=").append(document.getValidationResult().getReason());
-            }
-            documentsBlock.append("\n---\n");
+                    .append("\nOCR Text:\n").append(ocrText)
+                    .append("\n---\n");
         }
 
         StringBuilder clausesBlock = new StringBuilder();
@@ -99,21 +91,28 @@ public class ClaimDecisionAgent {
         return """
                 You are the final Claim Decision Agent for an insurance claim processing system.
 
-                Your task is to decide the outcome of this claim using ONLY the evidence
-                supplied below - the documents submitted, their OCR text, their
-                per-document validation findings, and the retrieved policy clauses.
+                No separate relevance or per-document validation step has run before
+                this. As part of this single decision you must judge, for each
+                submitted document: whether it is actually relevant to this claim, and
+                whether it satisfies the applicable retrieved policy clause(s). Use
+                ONLY the evidence supplied below - the documents' OCR text and the
+                retrieved policy clauses.
 
                 Decide exactly one of: APPROVED, REJECTED, MANUAL_REVIEW.
-                - Use MANUAL_REVIEW whenever the evidence is insufficient, the documents
-                  conflict with each other or with the user's answers in a way that
-                  isn't clear-cut, or no clause clearly applies. Do not guess.
-                - Use REJECTED only when a specific retrieved clause clearly disqualifies
-                  the claim (e.g. waiting period not met, permanent exclusion, mandatory
-                  document missing) - cite that clause in "reason".
-                - Use APPROVED only when the submitted documents satisfy the applicable
-                  clause(s) and are consistent with the user's answers. List any binding
-                  conditions found in the clause text (co-payment percentages, sub-limits,
-                  restoration rules, etc.) in "conditions".
+                - If a document is not relevant to this claim type/reason, disregard
+                  it as evidence rather than treating it as support for the claim.
+                - Use MANUAL_REVIEW whenever the evidence is insufficient (e.g. no
+                  relevant document at all, or documents that don't clearly relate to
+                  this claim), the documents conflict with each other or with the
+                  user's answers in a way that isn't clear-cut, or no clause clearly
+                  applies. Do not guess.
+                - Use REJECTED only when a specific retrieved clause clearly
+                  disqualifies the claim (e.g. waiting period not met, permanent
+                  exclusion, mandatory document missing) - cite that clause in "reason".
+                - Use APPROVED only when at least one relevant document satisfies the
+                  applicable clause(s) and is consistent with the user's answers. List
+                  any binding conditions found in the clause text (co-payment
+                  percentages, sub-limits, restoration rules, etc.) in "conditions".
 
                 CLAIM TYPE:
                 %s

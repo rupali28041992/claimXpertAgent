@@ -41,9 +41,6 @@ docvalidation:
       - application/pdf
       - image/jpeg
       - image/png
-  relevance:
-    high-threshold: 0.80
-    low-threshold: 0.60
   mongodb:
     policy-vector-index: policy_clause_vector_index
   rag:

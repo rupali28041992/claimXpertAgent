@@ -2,7 +2,6 @@ package com.nextgen.claims.docvalidation.agent;
 
 import com.nextgen.claims.docvalidation.model.ClaimContext;
 import com.nextgen.claims.docvalidation.model.DocumentResult;
-import com.nextgen.claims.docvalidation.model.DocumentRelevanceResult;
 import com.nextgen.claims.docvalidation.model.DocumentStatus;
 import com.nextgen.claims.docvalidation.service.FileValidationService;
 import com.nextgen.claims.docvalidation.service.OcrService;
@@ -12,13 +11,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Processes ONE uploaded document end to end: file validation -> OCR ->
- * relevance (Section 10 of the spec). A failure at any stage stops that
+ * Processes ONE uploaded document: file validation -> OCR. No LLM call
+ * happens per document anymore - relevance and clause-satisfaction judgment
+ * were folded into ClaimDecisionAgent's single call so there is exactly one
+ * LLM call in the whole submit flow. A failure at either stage stops that
  * document's own pipeline but never throws - ClaimOrchestrator continues
- * with the remaining documents regardless (Section 34).
+ * with the remaining documents regardless.
  */
 @Slf4j
 @Component
@@ -27,7 +29,6 @@ public class DocumentAgent {
 
     private final FileValidationService fileValidationService;
     private final OcrService ocrService;
-    private final DocumentRelevanceAgent documentRelevanceAgent;
 
     public DocumentResult process(MultipartFile file, ClaimContext context) {
         String documentId = "doc_" + UUID.randomUUID().toString().substring(0, 8);
@@ -43,7 +44,6 @@ public class DocumentAgent {
                     .fileName(fileName)
                     .valid(false)
                     .errors(fileValidation.errors())
-                    .relevant(false)
                     .status(DocumentStatus.FAILED)
                     .build();
         }
@@ -55,47 +55,20 @@ public class DocumentAgent {
                     .documentId(documentId)
                     .fileName(fileName)
                     .valid(true)
-                    .errors(new ArrayList<>(java.util.List.of("OCR_FAILED")))
-                    .relevant(false)
+                    .errors(new ArrayList<>(List.of("OCR_FAILED")))
                     .status(DocumentStatus.FAILED)
                     .build();
         }
         log.info("[DocumentAgent] OCR SUCCESS document={}", documentId);
         log.info("[DocumentAgent] OCR TEXT document={} text={}", documentId, ocrText);
 
-        DocumentRelevanceResult relevance = documentRelevanceAgent.assessRelevance(
-                context.getClaimType(), context.getClaimReason(), context.getAnswers(), ocrText);
-
-        if (!relevance.isRelated()) {
-            log.info("[DocumentAgent] UNRELATED_DOCUMENT document={}", documentId);
-            return DocumentResult.builder()
-                    .documentId(documentId)
-                    .fileName(fileName)
-                    .valid(true)
-                    .errors(new ArrayList<>(java.util.List.of("UNRELATED_DOCUMENT")))
-                    .ocrText(ocrText)
-                    .documentType(relevance.getDocumentType())
-                    .relevant(false)
-                    .relevanceConfidence(relevance.getConfidence())
-                    .similarityScore(relevance.getSimilarityScore())
-                    .relevanceReason(relevance.getReason())
-                    .status(DocumentStatus.IRRELEVANT)
-                    .build();
-        }
-
-        log.info("[DocumentAgent] COMPLETE document={} relevant=true", documentId);
         return DocumentResult.builder()
                 .documentId(documentId)
                 .fileName(fileName)
                 .valid(true)
                 .errors(new ArrayList<>())
                 .ocrText(ocrText)
-                .documentType(relevance.getDocumentType())
-                .relevant(true)
-                .relevanceConfidence(relevance.getConfidence())
-                .similarityScore(relevance.getSimilarityScore())
-                .relevanceReason(relevance.getReason())
-                .status(DocumentStatus.RELEVANT)
+                .status(DocumentStatus.COMPLETED)
                 .build();
     }
 }

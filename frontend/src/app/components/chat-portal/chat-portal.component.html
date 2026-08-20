@@ -280,11 +280,25 @@
                   </div>
                   <span class="agent-confirm-title">Claim Submitted Successfully!</span>
                 </div>
-                <p>Thank you for submitting your claim. I've received all the details you provided. Our claims team will review your submission and get back to you within <strong>2–3 business days</strong>.</p>
-                <p>A confirmation email has been sent to your registered address. Please keep your claim reference number handy for future correspondence.</p>
+                <p>Thank you for submitting your claim. I've received all the details you provided.</p>
                 <div class="agent-confirm-ref">
                   Claim Reference: <strong>{{ claimRef }}</strong>
                 </div>
+                @if (claimDecision) {
+                  <div class="agent-confirm-decision">
+                    <p>
+                      Decision:
+                      <strong>{{ claimDecision.decision }}</strong>
+                      @if (claimDecision.decision === 'MANUAL_REVIEW') {
+                        — our claims team will review your submission and get back to you within <strong>2–3 business days</strong>.
+                      }
+                    </p>
+                    <p>{{ claimDecision.reason }}</p>
+                    @if (claimDecision.conditions.length) {
+                      <p>Conditions: {{ claimDecision.conditions.join(', ') }}</p>
+                    }
+                  </div>
+                }
               </div>
             </div>
           }

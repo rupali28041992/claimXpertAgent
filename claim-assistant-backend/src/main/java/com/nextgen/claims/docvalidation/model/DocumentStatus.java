@@ -1,14 +1,7 @@
 package com.nextgen.claims.docvalidation.model;
 
+/** DocumentAgent only ever produces one of these two outcomes now - file validation and OCR are the only per-document stages. */
 public enum DocumentStatus {
-    RECEIVED,
-    VALIDATING_FILE,
-    OCR_PROCESSING,
-    OCR_COMPLETED,
-    CHECKING_RELEVANCE,
-    RELEVANT,
-    IRRELEVANT,
-    VALIDATING_POLICY,
     COMPLETED,
     FAILED
 }

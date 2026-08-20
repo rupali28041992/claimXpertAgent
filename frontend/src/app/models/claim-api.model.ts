@@ -15,12 +15,29 @@ export interface ClaimSubmitRequest {
   answers: ClaimAnswerPayload[];
 }
 
-/** Mirrors com.nextgen.claims.dto.ClaimSubmitResponse on the backend. */
-export interface ClaimSubmitResponse {
+/** Mirrors com.nextgen.claims.docvalidation.model.DocumentResult - only file validation and OCR happen per document now. */
+export interface DocumentResult {
+  fileName: string;
+  documentId: string;
+  valid: boolean;
+  errors: string[];
+  ocrText: string | null;
+  status: string;
+}
+
+/** Mirrors com.nextgen.claims.docvalidation.model.ClaimDecisionResult - Ollama's final call. */
+export interface ClaimDecisionResult {
+  decision: 'APPROVED' | 'REJECTED' | 'MANUAL_REVIEW';
+  conditions: string[];
+  matchedClauses: string[];
+  confidence: number;
+  reason: string;
+}
+
+/** Mirrors com.nextgen.claims.docvalidation.model.ClaimResult - what POST /api/claims/submit now returns. */
+export interface ClaimResult {
   claimId: string;
-  readinessScore: number | null;
-  flags: string[] | null;
-  summary: string | null;
-  status: string | null;
-  fileErrors: string[] | null;
+  status: 'RECEIVED' | 'COMPLETED' | 'PARTIALLY_COMPLETED' | 'FAILED';
+  documents: DocumentResult[];
+  decision: ClaimDecisionResult | null;
 }

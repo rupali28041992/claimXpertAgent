@@ -7,7 +7,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { FormSchema, FormField, FieldCondition } from '../../models/form-schema.model';
 import { ClaimApiService } from '../../services/claim-api.service';
-import { ClaimAnswerPayload, ClaimSubmitRequest } from '../../models/claim-api.model';
+import { ClaimAnswerPayload, ClaimSubmitRequest, ClaimDecisionResult } from '../../models/claim-api.model';
 
 /**
  * form-schema.json's claim_type radio options (AUTO/HEALTH/PROPERTY/LIFE)
@@ -40,6 +40,7 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   currentField: FormField | null = null;
   isSubmitted = false;
   claimRef = '';
+  claimDecision: ClaimDecisionResult | null = null;
   selectedFiles: { [fieldId: string]: File[] } = {};
   isLoading = true;
   isSubmitting = false;
@@ -212,11 +213,15 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
     this.claimApiService.submit(claimRequest, allFiles).subscribe({
       next: response => {
         this.isSubmitting = false;
-        if (response.fileErrors?.length) {
-          this.submitError = response.fileErrors.join(' | ');
+        if (response.status === 'FAILED') {
+          const docErrors = response.documents.flatMap(d => d.errors ?? []);
+          this.submitError = docErrors.length
+            ? docErrors.join(' | ')
+            : 'Claim could not be processed. Please check your documents and try again.';
           return;
         }
         this.claimRef = response.claimId;
+        this.claimDecision = response.decision;
         this.isSubmitted = true;
         this.currentField = null;
         this.shouldScroll = true;
