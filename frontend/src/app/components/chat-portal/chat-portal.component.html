@@ -1,25 +1,3 @@
-<!-- ══ PAGE HEADER ══════════════════════════════════════════ -->
-<header class="page-header">
-  <div class="page-header-inner">
-    <div class="page-logo">
-      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#2a69ac"/>
-      </svg>
-      <span>InsureCo</span>
-    </div>
-    <nav class="page-nav">
-      <a href="#">Home</a>
-      <a href="#" class="nav-active">File Claim</a>
-      <a href="#">My Claims</a>
-      <a href="#">Support</a>
-    </nav>
-    <div class="page-user">
-      <div class="user-dot"></div>
-      <span>Guest</span>
-    </div>
-  </div>
-</header>
-
 <!-- ══ MAIN CONTENT ═════════════════════════════════════════ -->
 <main class="portal-main">
   <div class="portal-card">
@@ -38,7 +16,7 @@
           <div class="card-sub">AI-assisted · Takes under 3 minutes</div>
         </div>
       </div>
-      @if (schema && !isLoading) {
+      @if (!isLoading && dynamicQuestions.length > 0 && policyCheckState === 'found') {
         <div class="card-step-badge">
           {{ answeredFields.length }}&nbsp;/&nbsp;{{ totalApplicableFields() }} fields
         </div>
@@ -46,7 +24,7 @@
     </div>
 
     <!-- Progress bar -->
-    @if (schema && !isLoading) {
+    @if (!isLoading && dynamicQuestions.length > 0 && policyCheckState === 'found') {
       <div class="progress-track">
         <div class="progress-fill" [style.width.%]="progressPercent()"></div>
       </div>
@@ -65,9 +43,81 @@
         <p>Hello! 👋 I'm here to help you file your insurance claim quickly and securely.
           I'll ask you a few questions — new fields will appear as you go, and you can
           edit any answer at any time.</p>
-        <p class="intro-note">Please fill in the details below to get started.</p>
+        @if (policyCheckState === 'found') {
+          <p class="intro-note">Policy verified — please fill in the claim details below.</p>
+        } @else {
+          <p class="intro-note">Please enter your policy number below to get started.</p>
+        }
       </div>
     </div>
+
+    <!-- ── Policy gate ── -->
+    @if (policyCheckState !== 'found') {
+      <div class="policy-gate">
+
+        @if (policyCheckState === 'idle' || policyCheckState === 'checking') {
+          <div class="active-question">
+            Please enter your policy number to begin your claim <span class="req-star">*</span>
+          </div>
+          <div class="policy-input-row">
+            <div class="input-shell" style="flex:1">
+              <input type="text" class="field-input"
+                     placeholder="e.g. POL-100234"
+                     [value]="policyNumber"
+                     (input)="policyNumber = $any($event.target).value"
+                     (keydown.enter)="checkPolicy()"
+                     [disabled]="policyCheckState === 'checking'" />
+            </div>
+            <button class="btn-check-policy"
+                    (click)="checkPolicy()"
+                    [disabled]="policyCheckState === 'checking' || !policyNumber.trim()">
+              @if (policyCheckState === 'checking') {
+                <span class="btn-spinner"></span> Verifying…
+              } @else {
+                Verify Policy
+              }
+            </button>
+          </div>
+          <div class="field-hint">Your policy number appears on your certificate of insurance or renewal notice</div>
+        }
+
+        @if (policyCheckState === 'not-found') {
+          <div class="policy-not-found">
+            <div class="policy-nf-header">
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="1.8"/>
+                <path d="M12 7v5M12 16h.01" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span class="policy-nf-title">Policy Not Located</span>
+            </div>
+            <p class="policy-nf-body">
+              We were unable to locate an active policy under the reference number
+              <strong>{{ policyNumber }}</strong>. Please verify your policy number on your
+              certificate of insurance or renewal notice and try again. If you believe this
+              is an error, please contact our support team before proceeding.
+            </p>
+            <div class="policy-nf-ref">Reference queried: {{ policyNumber }}</div>
+            <button class="btn-ghost" style="margin-top:14px" (click)="retryPolicy()">
+              ← Try a different policy number
+            </button>
+          </div>
+        }
+
+      </div>
+    }
+
+    @if (policyCheckState === 'found') {
+      <div class="policy-confirmed">
+        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+          <circle cx="10" cy="10" r="9" fill="#22c55e"/>
+          <path d="M6 10l3 3L14 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Policy&nbsp;<strong>{{ verifiedPolicyId }}</strong>&nbsp;— Active &amp; Verified
+        @if (verifiedHolderName) {
+          &nbsp;·&nbsp;{{ verifiedHolderName }}
+        }
+      </div>
+    }
 
     <!-- ── Form body ── -->
     <div class="form-body">
@@ -81,7 +131,7 @@
         </div>
       }
 
-      @if (!isLoading && form) {
+      @if (!isLoading && form && dynamicQuestions.length > 0 && policyCheckState === 'found') {
         <form [formGroup]="form" autocomplete="off">
 
           <!-- Fields rendered in schema order: answered rows and the active field
@@ -192,44 +242,90 @@
                   </div>
                 }
 
-                <!-- DATE — blur handles re-selecting the same date (change won't fire) -->
+                <!-- DATE — native picker with DD/MM/YYYY display overlay -->
                 @if (item.field.type === 'date') {
-                  <div class="input-shell date-shell">
+                  <div class="input-shell date-shell" (click)="openDatePicker('dp-' + item.field.id)">
                     <svg class="date-icon" viewBox="0 0 24 24" fill="none" width="16" height="16">
                       <rect x="3" y="4" width="18" height="18" rx="2" stroke="#94a3b8" stroke-width="1.6"/>
                       <path d="M16 2v4M8 2v4M3 10h18" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"/>
                     </svg>
-                    <input type="date" [formControlName]="item.field.id"
-                           class="field-input date-input" [max]="today"
-                           (change)="onAnswer(item.field)"
-                           (blur)="onAnswer(item.field)" />
+                    <span class="date-display-text"
+                          [class.date-placeholder]="!form.get(item.field.id)?.value">
+                      {{ toDisplayDate(form.get(item.field.id)?.value) }}
+                    </span>
+                    <input [id]="'dp-' + item.field.id"
+                           type="date"
+                           [formControlName]="item.field.id"
+                           class="date-picker-trigger"
+                           [max]="today"
+                           (change)="onAnswer(item.field)" />
                   </div>
                 }
 
-                <!-- FILE -->
+                <!-- FILE — multi-document uploader -->
                 @if (item.field.type === 'file') {
-                  <label class="file-drop" [for]="'file-' + item.field.id">
+                  <div class="doc-uploader"
+                       [class.drag-over]="dragOverField === item.field.id"
+                       (dragover)="onDragOver($event, item.field.id)"
+                       (dragleave)="onDragLeave()"
+                       (drop)="onDrop($event, item.field)">
+
+                    <!-- Hidden primary input -->
                     <input [id]="'file-' + item.field.id" type="file" class="file-hidden"
-                           [accept]="item.field.accept || ''" [multiple]="item.field.multiple || false"
+                           [accept]="item.field.accept || ''" multiple
                            (change)="onFileSelected($event, item.field)" />
-                    <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
-                      <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
-                      <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
-                    </svg>
-                    @if (!selectedFiles[item.field.id].length) {
-                      <span class="file-label">Click to browse or drag files here</span>
-                      <span class="file-types">{{ item.field.accept }}</span>
-                    } @else {
-                      <span class="file-label selected">{{ selectedFiles[item.field.id].length }} file(s) selected</span>
-                      @for (f of selectedFiles[item.field.id]; track f.name) {
-                        <span class="file-name">📄 {{ f.name }}</span>
-                      }
+
+                    <!-- Drop zone -->
+                    <div class="doc-drop-zone">
+                      <svg viewBox="0 0 24 24" fill="none" width="30" height="30">
+                        <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                      </svg>
+                      <div class="doc-drop-text">
+                        <span class="doc-drop-primary">Drag &amp; drop files here</span>
+                        <span class="doc-drop-or">or</span>
+                        <label [for]="'file-' + item.field.id" class="doc-browse-btn">Browse files</label>
+                      </div>
+                      <div class="doc-drop-hint">Accepted: {{ item.field.accept }} · Multiple files supported</div>
+                    </div>
+
+                    <!-- Uploaded file list -->
+                    @if ((selectedFiles[item.field.id] || []).length > 0) {
+                      <div class="doc-file-list">
+                        @for (f of (selectedFiles[item.field.id] || []); track f.name; let i = $index) {
+                          <div class="doc-file-item">
+                            <span class="doc-file-icon">{{ getFileIcon(f.name) }}</span>
+                            <div class="doc-file-info">
+                              <span class="doc-file-name">{{ f.name }}</span>
+                              <span class="doc-file-size">{{ formatFileSize(f.size) }}</span>
+                            </div>
+                            <button type="button" class="doc-file-remove" title="Remove" (click)="removeFile(item.field.id, i)">
+                              <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        }
+                        <!-- Add more -->
+                        <label [for]="'file-add-' + item.field.id" class="doc-add-more">
+                          <input [id]="'file-add-' + item.field.id" type="file" class="file-hidden"
+                                 [accept]="item.field.accept || ''" multiple
+                                 (change)="onFileSelected($event, item.field, true)" />
+                          <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          </svg>
+                          Add more files
+                        </label>
+                      </div>
                     }
-                  </label>
+                  </div>
+
                   <div class="file-actions">
                     <button type="button" class="btn-primary"
-                            [disabled]="!selectedFiles[item.field.id].length"
-                            (click)="onAnswer(item.field)">Confirm Upload</button>
+                            [disabled]="!selectedFiles[item.field.id]?.length"
+                            (click)="onAnswer(item.field)">
+                      Confirm {{ (selectedFiles[item.field.id]?.length || 0) }} Document(s)
+                    </button>
                     <button type="button" class="btn-ghost" (click)="onSkipFile(item.field)">Skip for now</button>
                   </div>
                 }
@@ -237,6 +333,131 @@
               </div>
             }
 
+          }
+
+          <!-- ── Document Category Upload ── -->
+          @if (questionsComplete && !docsConfirmed) {
+            <div class="doc-upload-section" #activeFieldRef>
+              <div class="doc-section-header">
+                <div class="doc-section-title">
+                  <svg viewBox="0 0 24 24" fill="none" width="17" height="17">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M14 2v6h6M12 12v6M9 15l3-3 3 3" stroke="#2a69ac" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  Upload Supporting Documents
+                  @if (totalDocCount() > 0) {
+                    <span class="doc-count-pill">{{ totalDocCount() }} file(s) ready</span>
+                  }
+                </div>
+                <p class="doc-section-sub">
+                  Select the category that best describes each document. Choose <strong>Others</strong> if you're unsure.
+                </p>
+              </div>
+
+              @for (doc of allDocCategories; track doc.type) {
+                <div class="doc-cat-row" [class.doc-cat-row--others]="doc.type === 'Others'">
+                  <div class="doc-cat-meta">
+                    <div class="doc-cat-name">
+                      @if (getFilesForType(doc.type).length > 0) {
+                        <svg viewBox="0 0 20 20" fill="none" width="14" height="14" style="flex-shrink:0">
+                          <circle cx="10" cy="10" r="9" fill="#22c55e"/>
+                          <path d="M6 10l3 3L14 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                      } @else {
+                        <span class="doc-cat-bullet"></span>
+                      }
+                      {{ doc.type }}
+                    </div>
+                    @if (doc.description) {
+                      <div class="doc-cat-desc">{{ doc.description }}</div>
+                    }
+                  </div>
+
+                  <div class="doc-cat-right">
+                    @if (getFilesForType(doc.type).length === 0) {
+                      <label [for]="'dc-' + doc.type" class="doc-cat-upload-btn">
+                        <input [id]="'dc-' + doc.type" type="file" class="file-hidden"
+                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" multiple
+                               (change)="onDocFileSelected($event, doc.type)" />
+                        <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
+                          <path d="M12 15V3m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                          <path d="M20 21H4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        Upload
+                      </label>
+                    } @else {
+                      <div class="doc-cat-file-list">
+                        @for (f of getFilesForType(doc.type); track f.name; let i = $index) {
+                          <div class="doc-cat-file-item">
+                            <span class="doc-cat-file-icon">{{ getFileIcon(f.name) }}</span>
+                            <span class="doc-cat-file-name">{{ f.name }}</span>
+                            <span class="doc-cat-file-size">{{ formatFileSize(f.size) }}</span>
+                            <button type="button" class="doc-file-remove"
+                                    title="Remove" (click)="removeDocFile(doc.type, i)">
+                              <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
+                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        }
+                        <label [for]="'dc-add-' + doc.type" class="doc-cat-add-more">
+                          <input [id]="'dc-add-' + doc.type" type="file" class="file-hidden"
+                                 accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" multiple
+                                 (change)="onDocFileSelected($event, doc.type)" />
+                          <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          </svg>
+                          Add more
+                        </label>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="doc-section-actions">
+                @if (totalDocCount() === 0) {
+                  <div class="doc-required-hint">
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                      <circle cx="10" cy="10" r="9" stroke="#f59e0b" stroke-width="1.6"/>
+                      <path d="M10 6v4M10 13h.01" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Please upload at least one document to continue
+                  </div>
+                }
+                <button type="button" class="btn-primary" (click)="onConfirmDocuments()"
+                        [disabled]="totalDocCount() === 0">
+                  Continue
+                  <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Doc upload confirmed summary row -->
+          @if (questionsComplete && docsConfirmed) {
+            <div class="answered-row">
+              <div class="ans-label">Supporting documents</div>
+              <div class="ans-right">
+                <span class="ans-value">
+                  <svg viewBox="0 0 14 14" fill="none" width="12" height="12">
+                    <circle cx="7" cy="7" r="7" fill="#22c55e"/>
+                    <path d="M3.5 7l2.3 2.3L10.5 5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+                  </svg>
+                  @if (totalDocCount() > 0) { {{ totalDocCount() }} file(s) uploaded }
+                  @else { Skipped }
+                </span>
+                <button type="button" class="btn-edit" (click)="onEditDocuments()" [disabled]="isSubmitted">
+                  <svg viewBox="0 0 24 24" fill="none" width="12" height="12">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  Edit
+                </button>
+              </div>
+            </div>
           }
 
           <!-- Submit -->
@@ -249,15 +470,20 @@
                 </svg>
                 All fields complete — review your answers above before submitting
               </div>
-              <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitting">
-                {{ isSubmitting ? 'Submitting...' : 'Submit Claim' }}
-                <svg viewBox="0 0 24 24" fill="none" width="17" height="17">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </button>
+
               @if (submitError) {
                 <div class="submit-error">{{ submitError }}</div>
               }
+              <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                  <span class="btn-spinner"></span> Submitting…
+                } @else {
+                  Submit Claim
+                  <svg viewBox="0 0 24 24" fill="none" width="17" height="17">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                }
+              </button>
             </div>
           }
 
@@ -280,25 +506,11 @@
                   </div>
                   <span class="agent-confirm-title">Claim Submitted Successfully!</span>
                 </div>
-                <p>Thank you for submitting your claim. I've received all the details you provided.</p>
+                <p>{{ submitResult?.summary }}</p>
+                <p>Status: <strong>{{ submitResult?.status }}</strong></p>
                 <div class="agent-confirm-ref">
-                  Claim Reference: <strong>{{ claimRef }}</strong>
+                  Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>
-                @if (claimDecision) {
-                  <div class="agent-confirm-decision">
-                    <p>
-                      Decision:
-                      <strong>{{ claimDecision.decision }}</strong>
-                      @if (claimDecision.decision === 'MANUAL_REVIEW') {
-                        — our claims team will review your submission and get back to you within <strong>2–3 business days</strong>.
-                      }
-                    </p>
-                    <p>{{ claimDecision.reason }}</p>
-                    @if (claimDecision.conditions.length) {
-                      <p>Conditions: {{ claimDecision.conditions.join(', ') }}</p>
-                    }
-                  </div>
-                }
               </div>
             </div>
           }
@@ -317,21 +529,3 @@
 
   </div>
 </main>
-
-<!-- ══ PAGE FOOTER ══════════════════════════════════════════ -->
-<footer class="page-footer">
-  <div class="page-footer-inner">
-    <div class="footer-brand">
-      <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#94a3b8"/>
-      </svg>
-      <span>InsureCo</span>
-    </div>
-    <div class="footer-links">
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-      <a href="#">Contact Us</a>
-    </div>
-    <div class="footer-copy">© 2026 InsureCo. All rights reserved.</div>
-  </div>
-</footer>

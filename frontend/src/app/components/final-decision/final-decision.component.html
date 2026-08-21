@@ -1,0 +1,81 @@
+<div class="decision-page">
+
+  @if (isLoading) {
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <p>Loading decision…</p>
+    </div>
+  }
+
+  @if (!isLoading && !investigation) {
+    <div class="error-card">
+      <p>Could not load the investigation result. Please check the claim ID.</p>
+      <button class="btn-primary" (click)="fileNewClaim()">Back to Home</button>
+    </div>
+  }
+
+  @if (!isLoading && investigation) {
+    <div class="decision-card">
+
+      <div class="verdict-banner" [class]="verdictCssClass">
+        <div class="verdict-icon">
+          @if (investigation.finalDecision.verdict === 'APPROVED') { ✓ }
+          @if (investigation.finalDecision.verdict === 'REJECTED') { ✗ }
+          @if (investigation.finalDecision.verdict === 'HUMAN_REVIEW_REQUIRED') { ⚠ }
+        </div>
+        <div class="verdict-text">
+          <div class="verdict-label">{{ verdictLabel }}</div>
+          <div class="verdict-claim">Claim {{ investigation.claimId }}</div>
+        </div>
+        <div class="confidence-badge">{{ confidencePercent }}% confidence</div>
+      </div>
+
+      <div class="confidence-track">
+        <div class="confidence-fill" [style.width.%]="confidencePercent"></div>
+      </div>
+
+      <section class="section">
+        <h3 class="section-heading">Reasoning</h3>
+        <p class="reasoning-text">{{ investigation.finalDecision.reasoning }}</p>
+      </section>
+
+      <section class="section">
+        <h3 class="section-heading">Key Reasons</h3>
+        <ul class="key-reasons">
+          @for (reason of investigation.finalDecision.keyReasons; track reason) {
+            <li>{{ reason }}</li>
+          }
+        </ul>
+      </section>
+
+      <section class="section">
+        <h3 class="section-heading">Agent Findings</h3>
+        <div class="findings-grid">
+          @for (item of agentItems(); track item.title) {
+            <div class="finding-card">
+              <div class="finding-title">{{ item.title }}</div>
+              <div class="finding-verdict">{{ item.finding.verdict }}</div>
+              <div class="finding-score">{{ (item.finding.confidenceScore * 100).toFixed(0) }}%</div>
+              <div class="finding-explanation">{{ item.finding.explanation }}</div>
+              @if (item.finding.evidence && item.finding.evidence.length > 0) {
+                <ul class="finding-evidence">
+                  @for (e of item.finding.evidence; track e) {
+                    <li>{{ e }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="recommended-action">
+        <strong>Recommended Action:</strong> {{ investigation.finalDecision.recommendedAction }}
+      </div>
+
+      <button class="btn-primary" (click)="fileNewClaim()">File Another Claim</button>
+
+    </div>
+  }
+
+</div>

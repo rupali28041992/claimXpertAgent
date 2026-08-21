@@ -1,26 +1,31 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { ClaimSubmitRequest, ClaimResult } from '../models/claim-api.model';
+import {
+  ClaimSubmitResponse,
+  ClaimTypeConfig,
+  PolicyLookupResponse
+} from '../models/claim-api.model';
 
-/**
- * Talks to com.nextgen.claims.controller.ClaimController - POST
- * /api/claims/submit expects a multipart request with a "claim" JSON part
- * and one or more "files" parts, and now runs the full OCR -> RAG ->
- * Ollama decision pipeline server-side, returning a ClaimResult.
- */
+const API_BASE_URL = 'http://localhost:8080/api/claims';
+
 @Injectable({ providedIn: 'root' })
 export class ClaimApiService {
 
-  private readonly base = `${environment.apiBaseUrl}/claims`;
-
   constructor(private http: HttpClient) {}
 
-  submit(claim: ClaimSubmitRequest, files: File[]): Observable<ClaimResult> {
+  lookupPolicy(policyNumber: string): Observable<PolicyLookupResponse> {
+    return this.http.get<PolicyLookupResponse>(`${API_BASE_URL}/policy/${policyNumber}`);
+  }
+
+  getConfig(claimType: string): Observable<ClaimTypeConfig> {
+    return this.http.get<ClaimTypeConfig>(`${API_BASE_URL}/config/${claimType}`);
+  }
+
+  submit(claim: object, files: File[]): Observable<ClaimSubmitResponse> {
     const formData = new FormData();
-    formData.append('claim', new Blob([JSON.stringify(claim)], { type: 'application/json' }));
-    files.forEach(file => formData.append('files', file, file.name));
-    return this.http.post<ClaimResult>(`${this.base}/submit`, formData);
+    formData.append('claim', JSON.stringify(claim));
+    files.forEach(file => formData.append('files', file));
+    return this.http.post<ClaimSubmitResponse>(`${API_BASE_URL}/submit`, formData);
   }
 }
