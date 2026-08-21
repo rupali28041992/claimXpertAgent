@@ -6,9 +6,13 @@ import com.nextgen.claims.docvalidation.model.ClaimRequest;
 import com.nextgen.claims.docvalidation.model.ClaimResult;
 import com.nextgen.claims.docvalidation.repository.ClaimEntityRepository;
 import com.nextgen.claims.dto.ClaimSubmitRequest;
+import com.nextgen.claims.dto.PolicyLookupResponse;
+import com.nextgen.claims.dto.QuestionnaireRequest;
+import com.nextgen.claims.dto.QuestionnaireState;
 import com.nextgen.claims.model.ClaimAnswer;
 import com.nextgen.claims.rules.ClaimTypeConfig;
 import com.nextgen.claims.rules.RulesEngineService;
+import com.nextgen.claims.service.PolicyService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -35,7 +39,25 @@ public class ClaimController {
     private final ClaimOrchestrator claimOrchestrator;
     private final ClaimEntityRepository claimEntityRepository;
     private final RulesEngineService rulesEngineService;
+    private final PolicyService policyService;
     private final ObjectMapper objectMapper;
+
+    /** Screen 1: user types a policy number, we resolve customerId/claimType from Mongo. */
+    @GetMapping("/policy/{policyNumber}")
+    public PolicyLookupResponse lookupPolicy(@PathVariable String policyNumber) {
+        return policyService.lookup(policyNumber);
+    }
+
+    /**
+     * GoRules-driven dynamic questionnaire engine.
+     * Each call returns the full question set relevant to the user's current answers,
+     * and derives claimType + claimReason once all required questions are answered.
+     */
+    @PostMapping("/questions")
+    public QuestionnaireState getNextQuestions(@RequestBody QuestionnaireRequest request) {
+        Map<String, String> answers = request.getAnswers() != null ? request.getAnswers() : Map.of();
+        return rulesEngineService.evaluateQuestions(answers);
+    }
 
     /** Screens 3 & 4 pull their field/document lists from this (GoRules-backed) lookup - a static config lookup, not a decision. */
     @GetMapping("/config/{claimType}")
