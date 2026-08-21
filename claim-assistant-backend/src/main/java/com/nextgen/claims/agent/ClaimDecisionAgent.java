@@ -1,11 +1,13 @@
 package com.nextgen.claims.agent;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nextgen.claims.model.Claim;
 import com.nextgen.claims.model.ClaimDocument;
 import com.nextgen.claims.rag.PolicyClauseRetriever;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,7 @@ public class ClaimDecisionAgent {
 
     private final ChatClient chatClient;
     private final PolicyClauseRetriever policyClauseRetriever;
+    private final ObjectMapper objectMapper;
 
     @Value("${claims.rag.top-k:5}")
     private int topK;
@@ -72,6 +75,10 @@ public class ClaimDecisionAgent {
 
                 Give a short, specific reason a human adjuster could read to understand the
                 decision, and a list of short machine-readable flag codes (empty if none).
+
+                IMPORTANT: Respond ONLY with a valid JSON object in this exact format (no markdown):
+                {"status": "AUTO_APPROVED", "reason": "your reason", "flags": []}
+                Valid status values: AUTO_APPROVED, AUTO_REJECTED, UNDER_REVIEW
                 """.formatted(
                 PromptTextSanitizer.sanitize(clauseText),
                 PromptTextSanitizer.sanitize(documentsText),
@@ -79,8 +86,14 @@ public class ClaimDecisionAgent {
                 claim.getReadinessScore() == null ? 0 : claim.getReadinessScore(),
                 PromptTextSanitizer.sanitize(String.valueOf(claim.getFlagsAtSubmission())));
 
+        // Use .content() instead of .entity() — same reason as ValidationAgent: entity() appends
+        // JSON format instructions to systemText which then goes through PromptTemplate (ST4).
         try {
-            return chatClient.prompt().user(prompt).call().entity(ClaimDecisionResult.class);
+            String raw = chatClient.prompt()
+                    .messages(new UserMessage(prompt))
+                    .call()
+                    .content();
+            return objectMapper.readValue(extractJson(raw), ClaimDecisionResult.class);
         } catch (Exception e) {
             log.warn("Claim decision agent call failed for claim {} ({}: {}); routing to UNDER_REVIEW",
                     claim.getClaimId(), e.getClass().getSimpleName(), e.getMessage());
@@ -89,6 +102,25 @@ public class ClaimDecisionAgent {
                     "Automated decision unavailable - routed for manual review",
                     List.of());
         }
+    }
+
+    private static String extractJson(String response) {
+        if (response == null) return "{}";
+        int start = response.indexOf("```json");
+        if (start >= 0) {
+            start += 7;
+            int end = response.indexOf("```", start);
+            if (end > start) return response.substring(start, end).strip();
+        }
+        start = response.indexOf("```");
+        if (start >= 0) {
+            start += 3;
+            int end = response.indexOf("```", start);
+            if (end > start) return response.substring(start, end).strip();
+        }
+        int open = response.indexOf('{');
+        int close = response.lastIndexOf('}');
+        return open >= 0 && close > open ? response.substring(open, close + 1) : response;
     }
 
     private String describeDocument(ClaimDocument document) {
