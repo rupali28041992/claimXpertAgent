@@ -18,12 +18,3 @@ export interface InvestigationResponse {
   finalDecision: FinalDecision;
   investigatedAt: string;
 }
-
-export interface ClaimSubmitResponse {
-  claimId: string;
-  readinessScore: number;
-  flags: string[];
-  summary: string;
-  status: string;
-  fileErrors?: string[];
-}

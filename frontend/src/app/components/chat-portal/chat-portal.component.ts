@@ -4,11 +4,9 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { FormField } from '../../models/form-schema.model';
 import { ClaimsService, DocumentCategory, QuestionnaireState } from '../../services/claims.service';
-import { PolicyLookupResponse } from '../../models/claim-api.model';
-import { ClaimSubmitResponse } from '../../models/investigation.model';
+import { ClaimSubmitResponse, DocumentResult, PolicyLookupResponse } from '../../models/claim-api.model';
 
 const OTHERS_DOC: DocumentCategory = {
   type: 'Others',
@@ -87,7 +85,6 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private router: Router,
     private claimsService: ClaimsService
   ) {}
 
@@ -460,16 +457,18 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
 
     this.claimsService.submit(fd).subscribe({
       next: response => {
-        if (response.fileErrors?.length) {
-          this.submitError = response.fileErrors.join(' | ');
+        const failedDocs = response.documents.filter((d: DocumentResult) => !d.valid);
+        if (response.status === 'FAILED' && failedDocs.length) {
+          this.submitError = failedDocs.flatMap((d: DocumentResult) => d.errors).join(' | ');
           this.isSubmitting = false;
           return;
         }
         this.claimRef = response.claimId;
+        this.submitResult = response;
         this.isSubmitted = true;
+        this.isSubmitting = false;
         this.currentField = null;
         this.shouldScroll = true;
-        this.router.navigate(['/investigating', response.claimId]);
       },
       error: () => {
         this.submitError = 'Failed to submit claim. Please check your connection and try again.';

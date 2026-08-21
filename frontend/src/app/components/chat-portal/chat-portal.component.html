@@ -506,8 +506,12 @@
                   </div>
                   <span class="agent-confirm-title">Claim Submitted Successfully!</span>
                 </div>
-                <p>{{ submitResult?.summary }}</p>
-                <p>Status: <strong>{{ submitResult?.status }}</strong></p>
+                @if (submitResult?.decision) {
+                  <p>Decision: <strong>{{ submitResult?.decision?.decision }}</strong></p>
+                  <p>{{ submitResult?.decision?.reason }}</p>
+                } @else {
+                  <p>Status: <strong>{{ submitResult?.status }}</strong></p>
+                }
                 <div class="agent-confirm-ref">
                   Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>

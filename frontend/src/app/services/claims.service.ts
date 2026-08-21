@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ClaimSubmitResponse, InvestigationResponse } from '../models/investigation.model';
+import { InvestigationResponse } from '../models/investigation.model';
+import { ClaimSubmitResponse } from '../models/claim-api.model';
 
 export interface PolicyVerifyResponse {
   valid: boolean;
