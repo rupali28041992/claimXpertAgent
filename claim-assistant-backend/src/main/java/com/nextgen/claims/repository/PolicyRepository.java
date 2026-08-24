@@ -7,5 +7,6 @@ import java.util.Optional;
 
 public interface PolicyRepository extends MongoRepository<Policy, String> {
 
+    // Fallback for documents inserted externally where policyNumber is a regular field
     Optional<Policy> findByPolicyNumber(String policyNumber);
 }

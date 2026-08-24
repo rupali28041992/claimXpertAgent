@@ -14,7 +14,10 @@ public class PolicyService {
     private final PolicyRepository policyRepository;
 
     public PolicyLookupResponse lookup(String policyNumber) {
-        Policy policy = policyRepository.findByPolicyNumber(policyNumber)
+        // findById covers policies whose policyNumber is stored as _id (Spring Data @Id).
+        // findByPolicyNumber covers documents inserted externally with policyNumber as a field.
+        Policy policy = policyRepository.findById(policyNumber)
+                .or(() -> policyRepository.findByPolicyNumber(policyNumber))
                 .orElseThrow(() -> new IllegalArgumentException("Policy not found: " + policyNumber));
 
         return PolicyLookupResponse.builder()
