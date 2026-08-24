@@ -16,17 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Coordinates the complete workflow: generate claimId -> per-file
- * DocumentAgent processing (file validation + OCR + relevance, independent
- * failures) -> ONE PolicyRagAgent lookup for the whole claim (top-K
- * clauses, no LLM call) -> ONE ClaimDecisionAgent call (the only LLM call
- * in this flow) -> return result. The RAG lookup is skipped entirely when
- * no document survived DocumentAgent as valid - there is nothing for
- * retrieved clauses to be decided against, so it would just be a wasted
- * Ollama embedding call. No Mongo write happens here - nothing is
- * persisted.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -37,69 +26,185 @@ public class ClaimOrchestrator {
     private final ClaimDecisionAgent claimDecisionAgent;
     private final DocValidationProperties properties;
 
-    public ClaimResult process(ClaimRequest request, List<MultipartFile> files) {
+    public ClaimResult process(
+            ClaimRequest request,
+            List<MultipartFile> files) {
 
-        // STEP 1 + STEP 2
         ClaimContext context = createContext(request);
-        log.info("[ClaimOrchestrator] START claim={}", context.getClaimId());
 
-        // STEP 3: each file processed independently - one bad file never stops the others.
-        for (MultipartFile file : files) {
-            DocumentResult document = documentAgent.process(file, context);
-            context.addDocument(document);
+        log.info(
+                "[ClaimOrchestrator] START claim={}",
+                context.getClaimId()
+        );
+
+        // ---------------------------------------------------------
+        // STEP 1: Process documents
+        // ---------------------------------------------------------
+
+        if (files != null && !files.isEmpty()) {
+
+            for (MultipartFile file : files) {
+
+                DocumentResult document =
+                        documentAgent.process(
+                                file,
+                                context
+                        );
+
+                context.addDocument(document);
+            }
         }
 
-        // STEP 4: ONE policy lookup for the whole claim, not per document - no LLM call, pure retrieval.
-        // Skipped when no document survived as valid: no point retrieving clauses to
-        // decide against when there is nothing left to decide over.
-        boolean hasValidDocument = context.getDocuments().stream().anyMatch(DocumentResult::isValid);
-        if (hasValidDocument) {
-            List<PolicyClause> clauses = policyRagAgent.findRelevantClauses(
-                    context.getClaimType(), context.getClaimReason(), properties.getRag().getTopK());
-            context.setPolicyClauses(clauses);
-        } else {
-            log.info("[ClaimOrchestrator] claim={} skipping RAG lookup - no valid documents", context.getClaimId());
+        // ---------------------------------------------------------
+        // STEP 2: Check valid documents
+        // ---------------------------------------------------------
+
+        boolean hasValidDocument =
+                context.getDocuments() != null
+                        && context.getDocuments()
+                        .stream()
+                        .anyMatch(DocumentResult::isValid);
+
+        if (!hasValidDocument) {
+
+            log.info(
+                    "[ClaimOrchestrator] claim={} no valid documents",
+                    context.getClaimId()
+            );
+
+            context.setDecision(
+                    claimDecisionAgent.decide(context)
+            );
+
+            context.setStatus(
+                    resolveClaimStatus(
+                            context.getDocuments()
+                    )
+            );
+
+            return buildResult(context);
         }
 
-        // STEP 5: the one and only LLM call - final decision over all valid documents + retrieved clauses together.
-        context.setDecision(claimDecisionAgent.decide(context));
+        // ---------------------------------------------------------
+        // STEP 3: ONE RAG lookup
+        // ---------------------------------------------------------
 
-        // STEP 6
-        context.setStatus(resolveClaimStatus(context.getDocuments()));
+        int topK =
+                properties.getRag().getTopK();
 
-        log.info("[ClaimOrchestrator] COMPLETE claim={}", context.getClaimId());
+        List<PolicyClause> clauses =
+                policyRagAgent.findRelevantClauses(
+                        context,
+                        topK
+                );
 
-        // STEP 7
+        context.setPolicyClauses(clauses);
+
+        log.info(
+                "[ClaimOrchestrator] claim={} RAG clauses={}",
+                context.getClaimId(),
+                clauses.size()
+        );
+
+        // ---------------------------------------------------------
+        // STEP 4: ONE Ollama decision call
+        // ---------------------------------------------------------
+
+        context.setDecision(
+                claimDecisionAgent.decide(context)
+        );
+
+        // ---------------------------------------------------------
+        // STEP 5: Final status
+        // ---------------------------------------------------------
+
+        context.setStatus(
+                resolveClaimStatus(
+                        context.getDocuments()
+                )
+        );
+
+        log.info(
+                "[ClaimOrchestrator] COMPLETE claim={} decision={}",
+                context.getClaimId(),
+                context.getDecision() == null
+                        ? null
+                        : context.getDecision().getDecision()
+        );
+
         return buildResult(context);
     }
 
-    private ClaimContext createContext(ClaimRequest request) {
-        ClaimContext context = new ClaimContext();
-        context.setClaimId("clm_" + UUID.randomUUID().toString().substring(0, 8));
-        context.setClaimType(request.getClaimType());
-        context.setClaimReason(request.getClaimReason());
-        context.setAnswers(request.getAnswers() == null ? Map.of() : request.getAnswers());
-        context.setStatus(ClaimProcessingStatus.RECEIVED);
+    private ClaimContext createContext(
+            ClaimRequest request) {
+
+        ClaimContext context =
+                new ClaimContext();
+
+        context.setClaimId(
+                "clm_" +
+                        UUID.randomUUID()
+                                .toString()
+                                .substring(0, 8)
+        );
+
+        if (request != null) {
+
+            context.setClaimType(
+                    request.getClaimType()
+            );
+
+            context.setClaimReason(
+                    request.getClaimReason()
+            );
+
+            context.setAnswers(
+                    request.getAnswers() == null
+                            ? Map.of()
+                            : request.getAnswers()
+            );
+
+        } else {
+
+            context.setAnswers(Map.of());
+        }
+
+        context.setStatus(
+                ClaimProcessingStatus.RECEIVED
+        );
+
         return context;
     }
 
-    private ClaimProcessingStatus resolveClaimStatus(List<DocumentResult> documents) {
-        if (documents.isEmpty()) {
+    private ClaimProcessingStatus resolveClaimStatus(
+            List<DocumentResult> documents) {
+
+        if (documents == null || documents.isEmpty()) {
             return ClaimProcessingStatus.FAILED;
         }
-        boolean anySucceeded = documents.stream().anyMatch(DocumentResult::isValid);
-        boolean anyFailed = documents.stream().anyMatch(d -> !d.isValid());
+
+        boolean anySucceeded =
+                documents.stream()
+                        .anyMatch(DocumentResult::isValid);
+
+        boolean anyFailed =
+                documents.stream()
+                        .anyMatch(d -> !d.isValid());
 
         if (anySucceeded && anyFailed) {
             return ClaimProcessingStatus.PARTIALLY_COMPLETED;
         }
+
         if (anySucceeded) {
             return ClaimProcessingStatus.COMPLETED;
         }
+
         return ClaimProcessingStatus.FAILED;
     }
 
-    private ClaimResult buildResult(ClaimContext context) {
+    private ClaimResult buildResult(
+            ClaimContext context) {
+
         return ClaimResult.builder()
                 .claimId(context.getClaimId())
                 .status(context.getStatus())
