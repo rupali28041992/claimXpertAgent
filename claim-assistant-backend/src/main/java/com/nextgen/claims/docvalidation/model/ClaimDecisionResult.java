@@ -1,5 +1,6 @@
 package com.nextgen.claims.docvalidation.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +20,9 @@ import java.util.List;
 @Builder
 public class ClaimDecisionResult {
     private ClaimDecisionStatus decision;
+    @JsonDeserialize(contentUsing = FlexibleStringDeserializer.class)
     private List<String> conditions;
+    @JsonDeserialize(contentUsing = FlexibleStringDeserializer.class)
     private List<String> matchedClauses;
     private double confidence;
     private String reason;

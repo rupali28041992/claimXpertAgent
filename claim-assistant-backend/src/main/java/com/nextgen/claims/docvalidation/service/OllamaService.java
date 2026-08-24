@@ -82,17 +82,18 @@ public class OllamaService {
 
             OllamaOptions options =
                     OllamaOptions.builder()
-                            .model("qwen3.5:2b")
+                            .model("qwen2.5:7b-instruct-q4_K_M")
                             .temperature(0.0)
-                            .numPredict(180)
+                            .numPredict(512)
                             .numCtx(4096)
                             .keepAlive("10m")
                             .format("json")
                             .build();
 
             log.info(
-                    "[OllamaService] START structured promptChars={} model=qwen3.5:2b",
-                    prompt == null ? 0 : prompt.length()
+                    "[OllamaService] START structured promptChars={} model={}",
+                    prompt == null ? 0 : prompt.length(),
+                    options.getModel()
             );
 
             /*
@@ -167,40 +168,36 @@ public class OllamaService {
     }
 
     /**
-     * Removes markdown code fences if Ollama returns:
-     *
-     * ```json
-     * {...}
-     * ```
+     * Strips Qwen3 <think>...</think> reasoning blocks and markdown code
+     * fences, leaving only the JSON payload.
      */
-    private String cleanJsonResponse(
-            String content) {
+    private String cleanJsonResponse(String content) {
 
-        String json =
-                content.trim();
+        String json = content.trim();
+
+        // Qwen3 "thinking" models wrap chain-of-thought in <think>...</think>
+        // before emitting the actual answer. Strip it so Jackson sees clean JSON.
+        int thinkEnd = json.lastIndexOf("</think>");
+        if (thinkEnd != -1) {
+            json = json.substring(thinkEnd + "</think>".length()).trim();
+        }
 
         if (json.startsWith("```json")) {
-
-            json =
-                    json.substring(
-                            "```json".length()
-                    ).trim();
-
+            json = json.substring("```json".length()).trim();
         } else if (json.startsWith("```")) {
-
-            json =
-                    json.substring(
-                            "```".length()
-                    ).trim();
+            json = json.substring("```".length()).trim();
         }
 
         if (json.endsWith("```")) {
+            json = json.substring(0, json.length() - 3).trim();
+        }
 
-            json =
-                    json.substring(
-                            0,
-                            json.length() - 3
-                    ).trim();
+        // Find the first { and last } to extract the JSON object in case
+        // the model prefixed or suffixed extra prose.
+        int start = json.indexOf('{');
+        int end = json.lastIndexOf('}');
+        if (start != -1 && end != -1 && end > start) {
+            json = json.substring(start, end + 1);
         }
 
         return json;

@@ -133,87 +133,92 @@ public class ClaimDecisionAgent {
             List<DocumentResult> documents,
             List<PolicyClause> clauses) {
 
-        String evidenceJson;
+        // Summarise evidence into one short line per document to keep the prompt small.
+        String evidenceSummary = buildEvidenceSummary(documents);
 
-        String clausesJson;
+        // Only the clause names + text — no embeddings.
+        String clausesSummary = clauses.stream()
+                .map(c -> "- " + c.getClaimReason() + ": " + c.getClauseText())
+                .reduce("", (a, b) -> a + "\n" + b);
 
-        try {
+        // Explicit exclusions extracted from policy for the model to check against.
+        String exclusionKeywords =
+                "cosmetic surgery, dental treatment, self-inflicted injury, " +
+                "AIDS/HIV, congenital disease, fertility treatment, obesity surgery, " +
+                "war injury, voluntary sterilisation";
 
-            evidenceJson =
-                    objectMapper.writeValueAsString(
-                            documents.stream()
-                                    .map(DocumentResult::getEvidence)
-                                    .toList()
-                    );
+        boolean hasDischarge = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "DISCHARGE_SUMMARY".equals(d.getEvidence().getDocumentType()));
 
-            clausesJson =
-                    objectMapper.writeValueAsString(
-                            clauses
-                    );
+        boolean hasBill = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                d.getEvidence().getBillAmount() != null &&
+                !d.getEvidence().getBillAmount().isBlank());
 
-        } catch (JsonProcessingException e) {
-
-            throw new IllegalStateException(
-                    "Unable to create Ollama prompt",
-                    e
-            );
-        }
+        String diagnosis = documents.stream()
+                .filter(d -> d.getEvidence() != null && d.getEvidence().getDiagnosis() != null)
+                .map(d -> d.getEvidence().getDiagnosis())
+                .findFirst().orElse("unknown");
 
         return """
-                You are an insurance claim decision engine.
+                /no_think
+                You are an insurance claim approval engine. Follow these exact rules:
 
-                Decide exactly one:
-                APPROVED
-                REJECTED
-                MANUAL_REVIEW
+                DECISION RULES (apply in order):
+                1. If the diagnosis matches any item in EXCLUSIONS → output REJECTED.
+                2. If DISCHARGE_SUMMARY_PRESENT=true AND BILL_PRESENT=true → output APPROVED.
+                3. Otherwise → output MANUAL_REVIEW.
 
-                Use ONLY the supplied claim evidence and policy clauses.
-
-                APPROVED:
-                Evidence supports the claim and satisfies the applicable policy.
-
-                REJECTED:
-                A supplied policy clause clearly excludes or disqualifies the claim.
-
-                MANUAL_REVIEW:
-                Evidence is insufficient, conflicting, or policy applicability is unclear.
-
-                Do not invent facts.
-                Do not repeat the evidence.
-                Do not provide analysis outside JSON.
-
-                CLAIM TYPE:
+                EXCLUSIONS (diagnoses NOT covered):
                 %s
 
-                CLAIM REASON:
+                INPUTS:
+                Claim type          : %s
+                Claim reason        : %s
+                Diagnosis found     : %s
+                DISCHARGE_SUMMARY_PRESENT: %s
+                BILL_PRESENT        : %s
+
+                DOCUMENT EVIDENCE SUMMARY:
                 %s
 
-                USER ANSWERS:
+                POLICY CLAUSES (for reference only — do not invent exclusions):
                 %s
 
-                DOCUMENT EVIDENCE:
-                %s
+                EXAMPLE — when discharge summary and bill are present and diagnosis is not excluded:
+                {"decision":"APPROVED","conditions":[],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.92,"reason":"Discharge summary and hospital bill present; diagnosis not excluded."}
 
-                RELEVANT POLICY CLAUSES:
-                %s
-
-                Return ONLY this JSON structure:
-                {
-                  "decision": "APPROVED",
-                  "conditions": [],
-                  "matchedClauses": [],
-                  "confidence": 0.95,
-                  "reason": "Short reason"
-                }
+                Now output ONLY valid JSON matching the example format:
                 """
                 .formatted(
+                        exclusionKeywords,
                         context.getClaimType(),
                         context.getClaimReason(),
-                        context.getAnswers(),
-                        evidenceJson,
-                        clausesJson
+                        diagnosis,
+                        hasDischarge,
+                        hasBill,
+                        evidenceSummary,
+                        clausesSummary
                 );
     }
+
+    private String buildEvidenceSummary(List<DocumentResult> documents) {
+        StringBuilder sb = new StringBuilder();
+        for (DocumentResult doc : documents) {
+            var e = doc.getEvidence();
+            if (e == null) continue;
+            sb.append("  [").append(e.getDocumentType()).append("] ")
+              .append("diagnosis=").append(e.getDiagnosis()).append(", ")
+              .append("treatment=").append(e.getTreatment()).append(", ")
+              .append("billAmount=").append(e.getBillAmount()).append(", ")
+              .append("admissionDate=").append(e.getAdmissionDate()).append(", ")
+              .append("dischargeDate=").append(e.getDischargeDate()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private record ClauseProjection(String claimType, String claimReason, String clauseText) {}
 
     private ClaimDecisionResult manualReview(String reason) {
 

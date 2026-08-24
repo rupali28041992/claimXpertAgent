@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import org.springframework.dao.DataAccessException;
+
 import java.util.Comparator;
 import java.util.List;
 
@@ -60,8 +62,13 @@ public class CosineMongoVectorService
          *     appendectomy
          *     cosmetic surgery
          */
-        List<PolicyClause> candidates =
-                repository.findByClaimType(claimType);
+        List<PolicyClause> candidates;
+        try {
+            candidates = repository.findByClaimType(claimType);
+        } catch (DataAccessException e) {
+            log.warn("[CosineMongoVectorService] MongoDB unavailable, proceeding without policy clauses: {}", e.getMessage());
+            return List.of();
+        }
 
         if (candidates.isEmpty()) {
 
