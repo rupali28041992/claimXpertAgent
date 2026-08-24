@@ -1,0 +1,32 @@
+{
+    "claimId": "clm_9f2c5ae1",
+    "status": "COMPLETED",
+    "documents": [
+        {
+            "fileName": "Hospital_Medical_Claim.pdf",
+            "documentId": "doc_89daca3a",
+            "valid": true,
+            "errors": [],
+            "evidence": {
+                "documentType": "HOSPITAL_BILL",
+                "patientName": "Test Patient",
+                "hospitalName": "Medical Insurance Claim",
+                "diagnosis": "& Treatment",
+                "admissionDate": null,
+                "dischargeDate": null,
+                "treatment": "Diagnostic evaluation followed by appendectomy and post-operative monitoring.",
+                "billAmount": null,
+                "policyNumber": "MED-TEST-2026-001",
+                "claimNumber": "MED-CLM-2026-001"
+            },
+            "status": "COMPLETED"
+        }
+    ],
+    "decision": {
+        "decision": "MANUAL_REVIEW",
+        "conditions": [],
+        "matchedClauses": [],
+        "confidence": 0.0,
+        "reason": "No applicable policy clause was retrieved."
+    }
+}
