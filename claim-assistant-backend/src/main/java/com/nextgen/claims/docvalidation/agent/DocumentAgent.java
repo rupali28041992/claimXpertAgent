@@ -8,6 +8,7 @@ import com.nextgen.claims.docvalidation.service.DocumentEvidenceExtractor;
 import com.nextgen.claims.docvalidation.service.DocumentRelevanceService;
 import com.nextgen.claims.docvalidation.service.FileValidationService;
 import com.nextgen.claims.docvalidation.service.OcrService;
+import com.nextgen.claims.docvalidation.service.OllamaEvidenceExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ public class DocumentAgent {
     private final OcrService ocrService;
     private final DocumentRelevanceService documentRelevanceService;
     private final DocumentEvidenceExtractor documentEvidenceExtractor;
+    private final OllamaEvidenceExtractor ollamaEvidenceExtractor;
 
     public DocumentResult process(
             MultipartFile file,
@@ -137,13 +139,54 @@ public class DocumentAgent {
                 );
 
         log.info(
-                "[DocumentAgent] EVIDENCE_EXTRACTED document={} type={}",
+                "[DocumentAgent] EVIDENCE_EXTRACTED document={} type={} diagnosis={} billAmount={}",
                 documentId,
-                evidence.getDocumentType()
+                evidence.getDocumentType(),
+                evidence.getDiagnosis(),
+                evidence.getBillAmount()
         );
 
+        // Hybrid fallback: if regex missed critical fields, ask Ollama to fill the gaps.
+        // Ollama is only called when needed — the happy path stays fast.
+        if (ollamaEvidenceExtractor.needsFallback(evidence, context.getClaimType())) {
+            log.info("[DocumentAgent] REGEX_INSUFFICIENT document={} — invoking Ollama extraction fallback",
+                    documentId);
+            evidence = ollamaEvidenceExtractor.extract(ocrText, context.getClaimType(), evidence);
+            log.info("[DocumentAgent] OLLAMA_EXTRACTION_DONE document={} type={} diagnosis={} billAmount={}",
+                    documentId, evidence.getDocumentType(), evidence.getDiagnosis(), evidence.getBillAmount());
+        }
+
         // ---------------------------------------------------------
-        // 5. Return ONLY structured evidence
+        // 5. Cross-check declared vs detected document type.
+        //    This is a deterministic rule — no AI needed.
+        //    A mislabeled document is rejected here so the claim
+        //    routes to MANUAL_REVIEW without Ollama guessing.
+        // ---------------------------------------------------------
+
+        String declaredCategory = context.getFileDocumentTypes().get(file.getOriginalFilename());
+
+        if (declaredCategory != null && evidence.getDocumentType() != null) {
+            String declaredNorm = declaredCategory.toUpperCase().replace(" ", "_");
+            String detectedType = evidence.getDocumentType().toUpperCase();
+
+            if (!detectedType.contains(declaredNorm) && !declaredNorm.contains(detectedType)) {
+                log.warn("[DocumentAgent] TYPE_MISMATCH document={} file={} declared='{}' detected='{}'",
+                        documentId, fileName, declaredCategory, evidence.getDocumentType());
+
+                return DocumentResult.builder()
+                        .documentId(documentId)
+                        .fileName(fileName)
+                        .valid(false)
+                        .errors(new ArrayList<>(List.of(
+                                "Document mislabeled: uploaded under '" + declaredCategory
+                                + "' but content is '" + evidence.getDocumentType() + "'")))
+                        .status(DocumentStatus.FAILED)
+                        .build();
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 6. Return structured evidence
         // ---------------------------------------------------------
 
         return DocumentResult.builder()

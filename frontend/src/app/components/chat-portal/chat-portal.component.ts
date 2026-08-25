@@ -1,12 +1,21 @@
 import {
-  Component, OnInit, AfterViewChecked,
+  Component, OnInit, OnDestroy, AfterViewChecked,
   ElementRef, ViewChild, ChangeDetectorRef
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormField } from '../../models/form-schema.model';
 import { ClaimsService, DocumentCategory, QuestionnaireState } from '../../services/claims.service';
-import { ClaimSubmitResponse, DocumentResult, PolicyLookupResponse } from '../../models/claim-api.model';
+import { ClaimSubmitResponse, ClaimStatus, DocumentResult, PolicyLookupResponse } from '../../models/claim-api.model';
+
+const CLAIM_TYPE_TO_ANSWER: Record<string, string> = {
+  MEDICAL: 'health_treatment',
+  MOTOR:   'vehicle_incident',
+  TRAVEL:  'travel_disruption',
+  LIFE:    'policyholder_death'
+};
+import { interval, Subscription } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 
 const OTHERS_DOC: DocumentCategory = {
   type: 'Others',
@@ -21,7 +30,7 @@ const OTHERS_DOC: DocumentCategory = {
   templateUrl: './chat-portal.component.html',
   styleUrls: ['./chat-portal.component.scss']
 })
-export class ChatPortalComponent implements OnInit, AfterViewChecked {
+export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('activeFieldRef') activeFieldRef!: ElementRef;
 
   form!: FormGroup;
@@ -50,9 +59,12 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
 
   isSubmitted = false;
   isSubmitting = false;
+  isPolling = false;
   isLoading = true;
   submitError = '';
   claimRef = '';
+
+  private pollSubscription?: Subscription;
 
   /** Field descriptor for the submit-zone document uploader. */
   readonly docsField: FormField = {
@@ -98,6 +110,36 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
       this.scrollToActive();
       this.shouldScroll = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.pollSubscription?.unsubscribe();
+  }
+
+  private startPolling(claimId: string): void {
+    this.isPolling = true;
+    this.pollSubscription = interval(3000).pipe(
+      switchMap(() => this.claimsService.getClaimStatus(claimId)),
+      takeWhile(res => !this.isTerminalStatus(res.status), true)
+    ).subscribe({
+      next: res => {
+        if (this.isTerminalStatus(res.status)) {
+          this.submitResult = res;
+          this.isPolling = false;
+          this.shouldScroll = true;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {
+        this.isPolling = false;
+        this.submitError = 'Unable to retrieve claim status. Please check the claim reference.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private isTerminalStatus(status: string): boolean {
+    return status === 'COMPLETED' || status === 'PARTIALLY_COMPLETED' || status === 'FAILED';
   }
 
   // ── GoRules integration ──────────────────────────────────────
@@ -392,15 +434,12 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
   checkPolicy(): void {
     if (!this.policyNumber.trim()) return;
     this.policyCheckState = 'checking';
-    this.claimsService.verifyPolicy(this.policyNumber.trim()).subscribe({
+    this.claimsService.lookupPolicy(this.policyNumber.trim()).subscribe({
       next: res => {
-        if (res.valid) {
-          this.verifiedPolicyId = res.policyId;
-          this.verifiedHolderName = res.holderName || '';
-          this.policyCheckState = 'found';
-        } else {
-          this.policyCheckState = 'not-found';
-        }
+        this.verifiedPolicyId = res.policyId;
+        this.verifiedHolderName = res.policyholderName || '';
+        this.policyCheckState = 'found';
+        this.preSeedClaimType(res.claimType);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -408,6 +447,27 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private preSeedClaimType(claimType: string): void {
+    const answer = CLAIM_TYPE_TO_ANSWER[claimType?.toUpperCase()];
+    if (!answer) return;
+
+    // Find the what_happened field from the loaded questions
+    const field = this.dynamicQuestions.find(q => q.id === 'what_happened');
+    if (!field) return;
+
+    // Skip if already answered
+    if (this.answeredFields.find(a => a.field.id === 'what_happened')) return;
+
+    this.form.get('what_happened')?.setValue(answer);
+    this.currentAnswers['what_happened'] = answer;
+
+    const label = field.options?.find(o => o.value === answer)?.label ?? answer;
+    this.answeredFields.push({ field, displayValue: label });
+
+    // Ask GoRules for the next questions now that what_happened is answered
+    this.fetchNextQuestions();
   }
 
   retryPolicy(): void {
@@ -457,18 +517,14 @@ export class ChatPortalComponent implements OnInit, AfterViewChecked {
 
     this.claimsService.submit(fd).subscribe({
       next: response => {
-        const failedDocs = response.documents.filter((d: DocumentResult) => !d.valid);
-        if (response.status === 'FAILED' && failedDocs.length) {
-          this.submitError = failedDocs.flatMap((d: DocumentResult) => d.errors).join(' | ');
-          this.isSubmitting = false;
-          return;
-        }
+        // 202 Accepted — pipeline runs async, documents/decision are null at this point
         this.claimRef = response.claimId;
         this.submitResult = response;
         this.isSubmitted = true;
         this.isSubmitting = false;
         this.currentField = null;
         this.shouldScroll = true;
+        this.startPolling(response.claimId);
       },
       error: () => {
         this.submitError = 'Failed to submit claim. Please check your connection and try again.';

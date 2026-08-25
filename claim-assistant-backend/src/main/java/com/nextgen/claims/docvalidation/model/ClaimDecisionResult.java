@@ -26,4 +26,7 @@ public class ClaimDecisionResult {
     private List<String> matchedClauses;
     private double confidence;
     private String reason;
+    @JsonDeserialize(contentUsing = FlexibleStringDeserializer.class)
+    private List<String> keyFindings;
+    private boolean aiError;
 }

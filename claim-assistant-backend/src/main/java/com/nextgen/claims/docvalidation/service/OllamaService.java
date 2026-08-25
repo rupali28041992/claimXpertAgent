@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.net.ConnectException;
@@ -19,6 +22,11 @@ public class OllamaService {
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
+    @Value("${spring.ai.ollama.chat.model}")
+    private String chatModel;
+
+    @Retryable(retryFor = OllamaServiceException.class, maxAttempts = 2,
+               backoff = @Backoff(delay = 4000))
     public String generate(String prompt) {
 
         long start = System.currentTimeMillis();
@@ -72,6 +80,8 @@ public class OllamaService {
      * That invokes Spring AI BeanOutputConverter and is the
      * source of the empty-response parsing error in the current flow.
      */
+    @Retryable(retryFor = OllamaServiceException.class, maxAttempts = 2,
+               backoff = @Backoff(delay = 4000))
     public <T> T generateStructured(
             String prompt,
             Class<T> responseType) {
@@ -82,9 +92,9 @@ public class OllamaService {
 
             OllamaOptions options =
                     OllamaOptions.builder()
-                            .model("qwen2.5:7b-instruct-q4_K_M")
+                            .model(chatModel)
                             .temperature(0.0)
-                            .numPredict(512)
+                            .numPredict(1024)
                             .numCtx(4096)
                             .keepAlive("10m")
                             .format("json")

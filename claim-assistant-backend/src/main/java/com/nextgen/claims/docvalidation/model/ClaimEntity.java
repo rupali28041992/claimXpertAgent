@@ -37,6 +37,8 @@ public class ClaimEntity {
 
     private ClaimProcessingStatus status;
 
+    private String aiFailureReason;
+
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -9,6 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface OcrService {
 
-    /** Returns null if extraction fails (caller records OCR_FAILED and stops that document). */
+    /** Returns empty string on failure or if no text can be extracted. Never returns null. */
     String extractText(MultipartFile file);
 }

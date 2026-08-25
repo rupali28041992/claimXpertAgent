@@ -40,14 +40,19 @@ export interface ClaimDecisionResult {
   matchedClauses: string[];
   confidence: number;
   reason: string;
+  keyFindings?: string[];
+  aiError?: boolean;
 }
 
-/** Mirrors com.nextgen.claims.docvalidation.model.ClaimResult - what POST /api/claims/submit returns. */
+export type ClaimStatus = 'RECEIVED' | 'PROCESSING' | 'COMPLETED' | 'PARTIALLY_COMPLETED' | 'FAILED';
+
+/** Mirrors both ClaimResult (202 response) and ClaimEntity (GET /api/claims/{id} response). */
 export interface ClaimSubmitResponse {
   claimId: string;
-  status: 'RECEIVED' | 'COMPLETED' | 'PARTIALLY_COMPLETED' | 'FAILED';
-  documents: DocumentResult[];
+  status: ClaimStatus;
+  documents: DocumentResult[] | null;
   decision: ClaimDecisionResult | null;
+  aiFailureReason?: string | null;
 }
 
 export interface PolicyCreateRequest {

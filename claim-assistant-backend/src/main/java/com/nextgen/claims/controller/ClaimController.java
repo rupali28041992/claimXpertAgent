@@ -2,6 +2,7 @@ package com.nextgen.claims.controller;
 
 import com.nextgen.claims.docvalidation.agent.ClaimOrchestrator;
 import com.nextgen.claims.docvalidation.model.ClaimEntity;
+import com.nextgen.claims.docvalidation.model.ClaimProcessingStatus;
 import com.nextgen.claims.docvalidation.model.ClaimRequest;
 import com.nextgen.claims.docvalidation.model.ClaimResult;
 import com.nextgen.claims.docvalidation.repository.ClaimEntityRepository;
@@ -13,23 +14,23 @@ import com.nextgen.claims.model.ClaimAnswer;
 import com.nextgen.claims.rules.ClaimTypeConfig;
 import com.nextgen.claims.rules.RulesEngineService;
 import com.nextgen.claims.service.PolicyService;
+import com.nextgen.claims.util.ByteArrayMultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-/**
- * Backend entry points for the Angular wizard. /submit now runs entirely
- * through the docvalidation pipeline (OCR -> relevance -> top-K RAG ->
- * ClaimDecisionAgent) - there is no separate GoRules-driven readiness
- * score or routing decision anymore, and no separate
- * POST /api/docvalidation/claims endpoint; this is the one submit path.
- */
+@Slf4j
 @RestController
 @RequestMapping("/api/claims")
 @RequiredArgsConstructor
@@ -42,44 +43,66 @@ public class ClaimController {
     private final PolicyService policyService;
     private final ObjectMapper objectMapper;
 
-    /** Screen 1: user types a policy number, we resolve customerId/claimType from Mongo. */
     @GetMapping("/policy/{policyNumber}")
     public PolicyLookupResponse lookupPolicy(@PathVariable String policyNumber) {
         return policyService.lookup(policyNumber);
     }
 
-    /**
-     * GoRules-driven dynamic questionnaire engine.
-     * Each call returns the full question set relevant to the user's current answers,
-     * and derives claimType + claimReason once all required questions are answered.
-     */
     @PostMapping("/questions")
     public QuestionnaireState getNextQuestions(@RequestBody QuestionnaireRequest request) {
         Map<String, String> answers = request.getAnswers() != null ? request.getAnswers() : Map.of();
         return rulesEngineService.evaluateQuestions(answers);
     }
 
-    /** Screens 3 & 4 pull their field/document lists from this (GoRules-backed) lookup - a static config lookup, not a decision. */
     @GetMapping("/config/{claimType}")
     public ClaimTypeConfig getConfig(@PathVariable String claimType) {
         return rulesEngineService.getClaimTypeConfig(claimType);
     }
 
     /**
-     * The single Submit call from Screen 4. Multipart: "claim" part is the
-     * JSON body (ClaimSubmitRequest), "files" parts are the uploaded documents.
-     * Delegates straight to ClaimOrchestrator - Ollama makes the final
-     * APPROVED/REJECTED/MANUAL_REVIEW call, not a GoRules table.
+     * Returns 202 Accepted immediately. Pipeline runs async — poll GET /{claimId} for result.
+     * File bytes are copied before dispatch so multipart temp files can be safely released.
      */
     @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ClaimResult submit(@RequestPart("claim") String claimJson,
-                               @RequestPart("files") List<MultipartFile> files) throws Exception {
+    public ResponseEntity<ClaimResult> submit(
+            @RequestPart("claim") String claimJson,
+            @RequestPart("files") List<MultipartFile> files) throws Exception {
+
         ClaimSubmitRequest submitRequest = objectMapper.readValue(claimJson, ClaimSubmitRequest.class);
         ClaimRequest request = toClaimRequest(submitRequest);
-        return claimOrchestrator.process(request, files);
+
+        String claimId = "clm_" + UUID.randomUUID().toString().substring(0, 8);
+
+        // Copy bytes before returning — multipart temp files may be cleaned up after 202 response
+        List<MultipartFile> copiedFiles = files.stream()
+                .map(f -> {
+                    try { return (MultipartFile) new ByteArrayMultipartFile(f); }
+                    catch (Exception e) { throw new RuntimeException("Failed to copy file: " + f.getOriginalFilename(), e); }
+                })
+                .toList();
+
+        // Persist initial RECEIVED state so GET /{claimId} works immediately
+        claimEntityRepository.save(ClaimEntity.builder()
+                .claimId(claimId)
+                .claimType(request.getClaimType())
+                .claimReason(request.getClaimReason())
+                .answers(request.getAnswers())
+                .status(ClaimProcessingStatus.RECEIVED)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build());
+
+        claimOrchestrator.processAsync(claimId, request, copiedFiles);
+
+        log.info("[ClaimController] claim={} submitted async files={}", claimId, copiedFiles.size());
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ClaimResult.builder()
+                        .claimId(claimId)
+                        .status(ClaimProcessingStatus.RECEIVED)
+                        .build());
     }
 
-    /** Screen 6 - track claim status. */
     @GetMapping("/{claimId}")
     public ClaimEntity getClaim(@PathVariable String claimId) {
         return claimEntityRepository.findById(claimId)
@@ -97,6 +120,10 @@ public class ClaimController {
         request.setClaimType(submitRequest.getClaimType());
         request.setClaimReason(submitRequest.getClaimReason());
         request.setAnswers(answers);
+        request.setFileDocumentTypes(
+                submitRequest.getFileDocumentTypes() != null
+                        ? submitRequest.getFileDocumentTypes()
+                        : Map.of());
         return request;
     }
 }

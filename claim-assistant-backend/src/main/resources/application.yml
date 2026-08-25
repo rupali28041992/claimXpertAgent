@@ -13,9 +13,17 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: qwen2.5:7b-instruct-q4_K_M
+        model: qwen2.5:3b
+        options:
+          keep-alive: 10m
+          num-predict: 1024
       embedding:
         model: nomic-embed-text
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=1h
 
 # Simple threshold config for GoRules-style routing until the real
 # GoRules SDK/table is wired in. Swap RulesEngineService's internals
@@ -44,6 +52,19 @@ docvalidation:
   mongodb:
     policy-vector-index: policy_clause_vector_index
   rag:
-    top-k: 4
+    top-k: 8
   decision:
     max-ocr-chars-per-doc: 4000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.nextgen.claims.docvalidation.agent.ClaimDecisionAgent: DEBUG

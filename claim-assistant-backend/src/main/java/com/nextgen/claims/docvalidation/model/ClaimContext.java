@@ -18,6 +18,8 @@ public class ClaimContext {
     private String claimType;
     private String claimReason;
     private Map<String, Object> answers;
+    /** Maps original filename → UI-selected document category declared by the user. */
+    private Map<String, String> fileDocumentTypes = new java.util.HashMap<>();
 
     private List<DocumentResult> documents = new ArrayList<>();
 

@@ -58,6 +58,10 @@ export class ClaimsService {
     return this.http.post<ClaimSubmitResponse>(`${this.base}/claims/submit`, formData);
   }
 
+  getClaimStatus(claimId: string): Observable<ClaimSubmitResponse> {
+    return this.http.get<ClaimSubmitResponse>(`${this.base}/claims/${claimId}`);
+  }
+
   investigate(claimId: string): Observable<InvestigationResponse> {
     return this.http.post<InvestigationResponse>(
       `${this.base}/claims/investigate/${claimId}`, {}
@@ -73,6 +77,12 @@ export class ClaimsService {
   verifyPolicy(policyId: string): Observable<PolicyVerifyResponse> {
     return this.http.get<PolicyVerifyResponse>(
       `${this.base}/policies/${policyId}/verify`
+    );
+  }
+
+  lookupPolicy(policyNumber: string): Observable<import('../models/claim-api.model').PolicyLookupResponse> {
+    return this.http.get<import('../models/claim-api.model').PolicyLookupResponse>(
+      `${this.base}/claims/policy/${policyNumber}`
     );
   }
 }

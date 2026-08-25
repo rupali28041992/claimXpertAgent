@@ -487,8 +487,94 @@
             </div>
           }
 
-          <!-- Success — agent confirmation message -->
-          @if (isSubmitted) {
+          <!-- Submitted: polling / processing state -->
+          @if (isSubmitted && isPolling) {
+            <div class="agent-confirm">
+              <div class="intro-avatar agent-confirm-avatar">
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="agent-confirm-bubble">
+                <div class="intro-agent-name">Claims Assistant</div>
+                <div class="agent-confirm-check">
+                  <span class="btn-spinner btn-spinner--dark"></span>
+                  <span class="agent-confirm-title">Analyzing your documents…</span>
+                </div>
+                <p>Your claim has been received. Our AI is reviewing the documents and policy clauses. This usually takes 15–30 seconds.</p>
+                <div class="agent-confirm-ref">
+                  Claim Reference: <strong>{{ claimRef }}</strong>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Submitted: final decision result -->
+          @if (isSubmitted && !isPolling && submitResult?.decision) {
+            <div class="agent-confirm">
+              <div class="intro-avatar agent-confirm-avatar">
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="agent-confirm-bubble">
+                <div class="intro-agent-name">Claims Assistant</div>
+                <div class="agent-confirm-check">
+                  <div class="success-circle success-circle--sm">
+                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                      <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <span class="agent-confirm-title">Claim Processing Complete</span>
+                </div>
+
+                <div class="decision-badge decision-badge--{{ submitResult?.decision?.decision?.toLowerCase() }}">
+                  {{ submitResult?.decision?.decision }}
+                </div>
+
+                @if (submitResult?.decision?.reason) {
+                  <p class="decision-reason">{{ submitResult?.decision?.reason }}</p>
+                }
+
+                @if (submitResult?.decision?.keyFindings?.length) {
+                  <div class="decision-key-findings">
+                    <div class="decision-key-findings-title">Key Findings</div>
+                    <ul class="decision-key-findings-list">
+                      @for (finding of submitResult!.decision!.keyFindings!; track $index) {
+                        <li>{{ finding }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (submitResult?.decision?.matchedClauses?.length) {
+                  <div class="decision-clauses">
+                    <span class="decision-clauses-label">Matched clauses:</span>
+                    @for (clause of submitResult!.decision!.matchedClauses!; track $index) {
+                      <span class="decision-clause-chip">{{ clause }}</span>
+                    }
+                  </div>
+                }
+
+                @if (submitResult?.decision?.confidence) {
+                  <p class="decision-confidence">Confidence: <strong>{{ (submitResult!.decision!.confidence * 100).toFixed(0) }}%</strong></p>
+                }
+
+                @if (submitResult?.aiFailureReason) {
+                  <p class="decision-ai-error">Note: AI decision engine was unavailable — this claim has been routed to manual review.</p>
+                }
+
+                <div class="agent-confirm-ref">
+                  Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Submitted: completed but no decision (edge case) -->
+          @if (isSubmitted && !isPolling && !submitResult?.decision) {
             <div class="agent-confirm">
               <div class="intro-avatar agent-confirm-avatar">
                 <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
@@ -506,12 +592,7 @@
                   </div>
                   <span class="agent-confirm-title">Claim Submitted Successfully!</span>
                 </div>
-                @if (submitResult?.decision) {
-                  <p>Decision: <strong>{{ submitResult?.decision?.decision }}</strong></p>
-                  <p>{{ submitResult?.decision?.reason }}</p>
-                } @else {
-                  <p>Status: <strong>{{ submitResult?.status }}</strong></p>
-                }
+                <p>Status: <strong>{{ submitResult?.status }}</strong></p>
                 <div class="agent-confirm-ref">
                   Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>
