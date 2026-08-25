@@ -146,19 +146,35 @@ public class ClaimDecisionAgent {
 
         String answersSummary = buildAnswersSummary(context);
 
+        // Explicit boolean flags — small models miss presence/absence when buried in detail
+        boolean hasDischarge = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "DISCHARGE_SUMMARY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasBill = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                d.getEvidence().getBillAmount() != null &&
+                !d.getEvidence().getBillAmount().isBlank());
+        String diagnosis = documents.stream()
+                .filter(d -> d.getEvidence() != null && d.getEvidence().getDiagnosis() != null)
+                .map(d -> d.getEvidence().getDiagnosis())
+                .findFirst().orElse("not identified");
+
         return """
                 /no_think
                 You are an expert insurance claims adjudicator. Read ALL the information below carefully \
                 and then make your own independent decision.
 
                 ── CLAIM DETAILS ──────────────────────────────────────────────
-                  Claim type   : %s
-                  Claim reason : %s
+                  Claim type                : %s
+                  Claim reason              : %s
+                  Diagnosis found           : %s
+                  DISCHARGE_SUMMARY_PRESENT : %s
+                  BILL_PRESENT              : %s
 
                 ── CLAIMANT QUESTIONNAIRE ANSWERS ─────────────────────────────
                 %s
 
-                ── SUBMITTED DOCUMENT EVIDENCE ────────────────────────────────
+                ── SUBMITTED DOCUMENT EVIDENCE (full detail) ──────────────────
                 %s
 
                 ── APPLICABLE POLICY CLAUSES ──────────────────────────────────
@@ -200,6 +216,9 @@ public class ClaimDecisionAgent {
                 .formatted(
                         context.getClaimType(),
                         context.getClaimReason(),
+                        diagnosis,
+                        hasDischarge,
+                        hasBill,
                         answersSummary,
                         evidenceSummary,
                         clausesSummary

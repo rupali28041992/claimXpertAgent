@@ -18,6 +18,10 @@ public class OllamaEvidenceExtractor {
      */
     public boolean needsFallback(DocumentEvidence evidence, String claimType) {
         if (evidence == null) return true;
+        // Always fall back if document type is still generic — means regex didn't recognise the format.
+        // A generic type means Ollama decision agent won't know what kind of document this is,
+        // which directly causes "Discharge summary: NOT FOUND" even when one was uploaded.
+        if (isGenericDocumentType(evidence.getDocumentType())) return true;
         return switch (claimType == null ? "" : claimType.toUpperCase()) {
             case "MEDICAL" -> evidence.getDiagnosis() == null && evidence.getBillAmount() == null;
             case "MOTOR"   -> evidence.getDiagnosis() == null && evidence.getBillAmount() == null;
@@ -25,6 +29,12 @@ public class OllamaEvidenceExtractor {
             case "LIFE"    -> evidence.getDiagnosis() == null;
             default        -> evidence.getDiagnosis() == null && evidence.getBillAmount() == null;
         };
+    }
+
+    private boolean isGenericDocumentType(String documentType) {
+        return documentType == null
+                || documentType.equalsIgnoreCase("MEDICAL_DOCUMENT")
+                || documentType.equalsIgnoreCase("UNKNOWN");
     }
 
     /**

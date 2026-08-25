@@ -193,24 +193,44 @@ public class DocumentEvidenceExtractor {
 
         String lower = text.toLowerCase();
 
-        if (containsAny(lower, "discharge summary", "discharge date")) {
+        // Discharge summary — covers common real-world variants
+        if (containsAny(lower,
+                "discharge summary", "discharge date", "date of discharge",
+                "discharged on", "discharge report", "clinical summary",
+                "summary of hospitalisation", "summary of hospitalization",
+                "inpatient summary", "in-patient summary", "patient discharge",
+                "discharge note", "final diagnosis", "admitted on", "admission date",
+                "date of admission")) {
             return "DISCHARGE_SUMMARY";
         }
 
-        if (containsAny(lower, "hospital bill", "bill amount", "total amount")) {
+        // Hospital bill — covers invoice, receipt, billing statements
+        if (containsAny(lower,
+                "hospital bill", "bill amount", "total amount", "invoice",
+                "billing statement", "payment receipt", "net payable",
+                "total charges", "amount due", "patient bill", "inpatient bill",
+                "final bill", "tax invoice")) {
             return "HOSPITAL_BILL";
         }
 
-        if (containsAny(lower, "prescription", "prescribed")) {
+        // Prescription
+        if (containsAny(lower, "prescription", "prescribed", "rx", "medicine",
+                "dosage", "tablet", "capsule", "syrup")) {
             return "PRESCRIPTION";
         }
 
-        if (containsAny(lower, "diagnostic report", "laboratory report",
-                "lab report", "test result")) {
+        // Diagnostic / lab report
+        if (containsAny(lower,
+                "diagnostic report", "laboratory report", "lab report",
+                "test result", "investigation report", "pathology report",
+                "radiology report", "x-ray report", "mri report", "ct scan",
+                "blood report", "urine report")) {
             return "DIAGNOSTIC_REPORT";
         }
 
-        if (containsAny(lower, "medical certificate")) {
+        // Medical certificate
+        if (containsAny(lower, "medical certificate", "fitness certificate",
+                "certificate of illness")) {
             return "MEDICAL_CERTIFICATE";
         }
 
