@@ -128,8 +128,8 @@
             >
               <div class="claim-item-top">
                 <span class="claim-item-id">{{ claim.claimId }}</span>
-                <span class="status-pill {{ statusClass(claim.status) }}">
-                  {{ statusLabel(claim.status) }}
+                <span class="status-pill {{ effectiveClass(claim) }}">
+                  {{ effectiveLabel(claim) }}
                 </span>
               </div>
               <div class="claim-item-reason">{{ claim.claimReason || claim.claimType }}</div>
@@ -155,9 +155,14 @@
         <div class="detail-header">
           <div class="detail-id-row">
             <span class="detail-id">{{ selectedClaim.claimId }}</span>
-            <span class="status-pill {{ statusClass(selectedClaim.status) }} status-pill--lg">
-              {{ statusLabel(selectedClaim.status) }}
+            <!-- Primary: AI verdict when available, else processing status -->
+            <span class="status-pill {{ effectiveClass(selectedClaim) }} status-pill--lg">
+              {{ effectiveLabel(selectedClaim) }}
             </span>
+            <!-- Secondary: processing status shown as small muted tag when verdict overrides it -->
+            @if (selectedClaim.decision) {
+              <span class="processing-tag">Processing: {{ statusLabel(selectedClaim.status) }}</span>
+            }
           </div>
           <div class="detail-meta">
             <span class="meta-chip">{{ selectedClaim.claimType }}</span>
@@ -175,9 +180,12 @@
           <div class="verdict-banner {{ decisionClass(selectedClaim.decision.decision) }}">
             <div class="verdict-left">
               <span class="verdict-label">{{ decisionLabel(selectedClaim.decision.decision) }}</span>
-              <span class="verdict-sub">AI Confidence: {{ confidencePct(selectedClaim) }}%</span>
             </div>
-            <div class="confidence-bar-wrap">
+            <div class="confidence-block">
+              <div class="confidence-header">
+                <span class="confidence-text">AI Confidence</span>
+                <span class="confidence-pct">{{ confidencePct(selectedClaim) }}%</span>
+              </div>
               <div class="confidence-bar">
                 <div class="confidence-fill" [style.width.%]="confidencePct(selectedClaim)"></div>
               </div>

@@ -99,6 +99,23 @@ export class ClaimStatusComponent implements OnInit {
     return 'status--partial';
   }
 
+  /** Primary pill shown in list & header — verdict when available, processing status otherwise. */
+  effectiveLabel(claim: ClaimEntityResponse): string {
+    const d = claim.decision?.decision;
+    if (d === 'APPROVED') return 'Approved';
+    if (d === 'REJECTED') return 'Rejected';
+    if (d === 'MANUAL_REVIEW') return 'Manual Review';
+    return this.statusLabel(claim.status);
+  }
+
+  effectiveClass(claim: ClaimEntityResponse): string {
+    const d = claim.decision?.decision;
+    if (d === 'APPROVED') return 'status--approved';
+    if (d === 'REJECTED') return 'status--rejected';
+    if (d === 'MANUAL_REVIEW') return 'status--review';
+    return this.statusClass(claim.status);
+  }
+
   decisionClass(decision: string): string {
     if (decision === 'APPROVED') return 'verdict--approved';
     if (decision === 'REJECTED') return 'verdict--rejected';
@@ -112,7 +129,8 @@ export class ClaimStatusComponent implements OnInit {
   }
 
   confidencePct(claim: ClaimEntityResponse): number {
-    return Math.round((claim.decision?.confidence ?? 0) * 100);
+    const raw = claim.decision?.confidence ?? 0;
+    return Math.round(raw <= 1 ? raw * 100 : raw);
   }
 
   answersEntries(answers: Record<string, unknown>): [string, string][] {

@@ -13,7 +13,7 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: qwen2.5:3b
+        model: qwen2.5:7b-instruct-q4_K_M
         options:
           keep-alive: 10m
           num-predict: 1024

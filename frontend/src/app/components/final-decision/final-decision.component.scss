@@ -1,4 +1,4 @@
-$primary:  #496EBD;
+$primary:  #3FA7D6;
 $heading:  #163D52;
 $success:  #35A77A;
 $warn:     #D99A32;
@@ -60,7 +60,7 @@ $danger:   #E06B6B;
 
   &.verdict-approved  { background: linear-gradient(135deg, #1A5C38, #35A77A); }
   &.verdict-rejected  { background: linear-gradient(135deg, #7A1515, #E06B6B); }
-  &.verdict-review    { background: linear-gradient(135deg, #3A5BAD, #496EBD); }
+  &.verdict-review    { background: linear-gradient(135deg, #2F91C0, #3FA7D6); }
 
   .verdict-icon {
     font-size: 2rem;

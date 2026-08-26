@@ -161,34 +161,41 @@ public class ClaimDecisionAgent {
 
         return """
                 /no_think
-                You are an expert insurance claims adjudicator. Read ALL the information below carefully \
-                and then make your own independent decision.
+                You are an expert insurance claims adjudicator. Produce a single JSON decision.
+
+                ── VERIFIED DOCUMENT FLAGS (pre-computed, authoritative — trust these exactly) ──
+                  DISCHARGE_SUMMARY_PRESENT : %s   ← if true, a valid discharge summary was verified
+                  BILL_PRESENT              : %s   ← if true, a valid hospital bill was verified
 
                 ── CLAIM DETAILS ──────────────────────────────────────────────
-                  Claim type                : %s
-                  Claim reason              : %s
-                  Diagnosis found           : %s
-                  DISCHARGE_SUMMARY_PRESENT : %s
-                  BILL_PRESENT              : %s
+                  Claim type   : %s
+                  Claim reason : %s
+                  Diagnosis    : %s
 
                 ── CLAIMANT QUESTIONNAIRE ANSWERS ─────────────────────────────
                 %s
 
-                ── SUBMITTED DOCUMENT EVIDENCE (full detail) ──────────────────
+                ── SUBMITTED DOCUMENT EVIDENCE ────────────────────────────────
                 %s
 
                 ── APPLICABLE POLICY CLAUSES ──────────────────────────────────
                 %s
 
-                YOUR TASK:
-                1. Read each policy clause and determine whether it covers or excludes the claim.
-                2. Check whether the submitted documents satisfy the requirements stated in the clauses \
-                   (e.g. discharge summary, itemised bill, FIR, death certificate — whatever the clause demands).
-                3. If any clause explicitly excludes the diagnosis or event → decide REJECTED and cite it.
-                4. If the evidence satisfies at least one coverage clause and no exclusion applies → decide APPROVED.
-                5. If evidence is incomplete or ambiguous and no exclusion applies → decide MANUAL_REVIEW.
+                DECISION RULES (apply in order):
+                1. REJECTED — only if a clause explicitly EXCLUDES the diagnosis or event type. \
+                   Missing documents are never a reason to reject.
+                2. APPROVED — if at least one coverage clause is satisfied by the evidence and no \
+                   exclusion applies. Use the DISCHARGE_SUMMARY_PRESENT and BILL_PRESENT flags as \
+                   the authoritative source for whether those documents exist.
+                3. MANUAL_REVIEW — if evidence is incomplete or ambiguous and no exclusion applies.
 
-                Do NOT use hardcoded rules. Base your decision entirely on the clauses and evidence above.
+                CRITICAL RULES:
+                - If DISCHARGE_SUMMARY_PRESENT is true, you MUST NOT say the discharge summary \
+                  is missing or not found. It is verified present.
+                - If BILL_PRESENT is true, you MUST NOT say the bill is missing.
+                - A discharge summary alone (without a bill) can satisfy hospitalisation clauses \
+                  if the clause does not explicitly require a bill.
+                - Base your decision on the clauses and evidence above only.
 
                 OUTPUT FORMAT (respond with ONLY valid JSON, no extra text):
                 {
@@ -200,25 +207,23 @@ public class ClaimDecisionAgent {
                   "confidence"    : 0.0-1.0
                 }
 
-                EXAMPLES:
+                EXAMPLE — APPROVED (discharge summary present, no bill required by clause):
+                {"decision":"APPROVED","reason":"The discharge summary confirms Acute Appendicitis. The In-patient Hospitalisation clause covers surgical treatment requiring 24+ hour admission and does not mandate a separate hospital bill. No exclusion clause applies to Appendicitis.","keyFindings":["Discharge summary present and verified — diagnosis: Acute Appendicitis","Treatment: Laparoscopic Appendectomy","Clause 'In-patient Hospitalisation' matched: covers surgical in-patient procedures","No exclusion clause applies to this diagnosis"],"conditions":[],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.91}
 
-                APPROVED:
-                {"decision":"APPROVED","reason":"The discharge summary confirms Acute Appendicitis (not listed as an excluded condition in any clause) and an itemised hospital bill of Rs.45,000 is present. The In-patient Hospitalisation clause explicitly covers surgical treatment requiring 24+ hour admission. All document requirements stated in the clause are satisfied.","keyFindings":["Discharge summary present — diagnosis: Acute Appendicitis","Hospital bill present — amount: Rs.45,000","Clause \\"In-patient Hospitalisation\\" matched: covers surgical procedures","No exclusion clause applies to Appendicitis","Admission: 10-Jan-2024, Discharge: 15-Jan-2024 (5 days — satisfies 24h minimum)"],"conditions":[],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.94}
+                EXAMPLE — REJECTED (diagnosis explicitly excluded by policy):
+                {"decision":"REJECTED","reason":"The claim is for dental treatment. Clause 'Exclusions — Dental' explicitly excludes routine and surgical dental procedures. This exclusion applies regardless of documents submitted.","keyFindings":["Diagnosis: dental treatment","Clause 'Exclusions — Dental' directly excludes this diagnosis","Rejection is based on policy exclusion, not missing documents"],"conditions":[],"matchedClauses":["Exclusions — Dental"],"confidence":0.98}
 
-                REJECTED:
-                {"decision":"REJECTED","reason":"The claim is for dental treatment. The policy clause \\"Exclusions — Dental\\" explicitly states that routine and surgical dental procedures are not covered under this policy. This exclusion applies regardless of whether supporting documents are present.","keyFindings":["Diagnosis: dental treatment","Clause \\"Exclusions — Dental\\" directly excludes this diagnosis","No coverage clause overrides this exclusion","Rejection is based on policy terms, not missing documents"],"conditions":["Diagnosis falls under an explicit exclusion"],"matchedClauses":["Exclusions — Dental"],"confidence":0.98}
+                EXAMPLE — MANUAL_REVIEW (clause requires bill, bill not present):
+                {"decision":"MANUAL_REVIEW","reason":"The In-patient Hospitalisation clause requires an itemised hospital bill for claims above Rs.10,000. The discharge summary is present but no bill was submitted. The claim cannot be approved without the bill.","keyFindings":["Discharge summary present and verified — diagnosis: Typhoid Fever","Bill: NOT PRESENT — required by clause for amounts above Rs.10,000","No exclusion applies to the stated diagnosis","Manual reviewer should request itemised hospital bill"],"conditions":["Itemised hospital bill required before approval"],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.5}
 
-                MANUAL_REVIEW:
-                {"decision":"MANUAL_REVIEW","reason":"The In-patient Hospitalisation clause requires both a discharge summary and an itemised hospital bill. A hospital bill was submitted but no discharge summary was found in the uploaded documents. The claim cannot be approved or rejected without the missing document.","keyFindings":["Hospital bill present — amount: Rs.28,000","Discharge summary: NOT FOUND","Clause \\"In-patient Hospitalisation\\" requires discharge summary for approval","No exclusion applies to the stated diagnosis","Manual reviewer should request discharge summary from claimant"],"conditions":["Discharge summary required before approval decision"],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.5}
-
-                Now produce the JSON decision for the claim details and evidence above:
+                Now produce the JSON decision for the claim above:
                 """
                 .formatted(
+                        hasDischarge,
+                        hasBill,
                         context.getClaimType(),
                         context.getClaimReason(),
                         diagnosis,
-                        hasDischarge,
-                        hasBill,
                         answersSummary,
                         evidenceSummary,
                         clausesSummary
@@ -231,19 +236,25 @@ public class ClaimDecisionAgent {
             var e = doc.getEvidence();
             if (e == null) continue;
             sb.append("  File       : ").append(doc.getFileName()).append("\n");
-            sb.append("  DocType    : ").append(e.getDocumentType()).append("\n");
-            sb.append("  PatientName: ").append(e.getPatientName()).append("\n");
-            sb.append("  Hospital   : ").append(e.getHospitalName()).append("\n");
-            sb.append("  Diagnosis  : ").append(e.getDiagnosis()).append("\n");
-            sb.append("  Treatment  : ").append(e.getTreatment()).append("\n");
-            sb.append("  BillAmount : ").append(e.getBillAmount()).append("\n");
-            sb.append("  Admission  : ").append(e.getAdmissionDate()).append("\n");
-            sb.append("  Discharge  : ").append(e.getDischargeDate()).append("\n");
-            sb.append("  PolicyNo   : ").append(e.getPolicyNumber()).append("\n");
-            sb.append("  ClaimNo    : ").append(e.getClaimNumber()).append("\n");
+            appendIfPresent(sb, "DocType    ", e.getDocumentType());
+            appendIfPresent(sb, "PatientName", e.getPatientName());
+            appendIfPresent(sb, "Hospital   ", e.getHospitalName());
+            appendIfPresent(sb, "Diagnosis  ", e.getDiagnosis());
+            appendIfPresent(sb, "Treatment  ", e.getTreatment());
+            appendIfPresent(sb, "BillAmount ", e.getBillAmount());
+            appendIfPresent(sb, "Admission  ", e.getAdmissionDate());
+            appendIfPresent(sb, "Discharge  ", e.getDischargeDate());
+            appendIfPresent(sb, "PolicyNo   ", e.getPolicyNumber());
+            appendIfPresent(sb, "ClaimNo    ", e.getClaimNumber());
             sb.append("\n");
         }
         return sb.isEmpty() ? "  (no evidence extracted)" : sb.toString();
+    }
+
+    private void appendIfPresent(StringBuilder sb, String label, String value) {
+        if (value != null && !value.isBlank()) {
+            sb.append("  ").append(label).append(": ").append(value).append("\n");
+        }
     }
 
     private String buildAnswersSummary(ClaimContext context) {
