@@ -68,3 +68,4 @@ management:
 logging:
   level:
     com.nextgen.claims.docvalidation.agent.ClaimDecisionAgent: DEBUG
+    com.nextgen.claims.docvalidation.service.OllamaService: DEBUG

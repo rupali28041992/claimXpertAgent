@@ -47,6 +47,23 @@ public class ClaimDecisionAgent {
                     context.getClaimId()
             );
 
+            if (allDocumentsWrongOrIrrelevant(context.getDocuments())) {
+
+                log.info(
+                        "[ClaimDecisionAgent] claim={} all documents wrong/irrelevant — rejecting",
+                        context.getClaimId()
+                );
+
+                return logAndReturn(
+                        context,
+                        rejected(
+                                "None of the uploaded documents match this claim — "
+                                        + "they were either irrelevant to the claim type or "
+                                        + "declared under the wrong document category."
+                        )
+                );
+            }
+
             return logAndReturn(
                     context,
                     manualReview(
@@ -254,6 +271,40 @@ public class ClaimDecisionAgent {
         context.getAnswers().forEach((key, value) ->
                 sb.append("  ").append(key).append(": ").append(value).append("\n"));
         return sb.toString();
+    }
+
+    /**
+     * True only when EVERY uploaded document failed because it was the wrong
+     * document for this claim (content irrelevant to the claim type, or
+     * declared under the wrong category) — never for technical upload
+     * problems (OCR failure, corrupt/oversized file), which stay
+     * MANUAL_REVIEW since those could be an honest upload mistake rather
+     * than an invalid claim.
+     */
+    private boolean allDocumentsWrongOrIrrelevant(List<DocumentResult> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return false;
+        }
+        return documents.stream().allMatch(this::isWrongDocumentError);
+    }
+
+    private boolean isWrongDocumentError(DocumentResult document) {
+        List<String> errors = document.getErrors();
+        if (errors == null || errors.isEmpty()) {
+            return false;
+        }
+        return errors.stream().allMatch(err ->
+                "DOCUMENT_NOT_RELEVANT".equals(err) || err.startsWith("Document mislabeled"));
+    }
+
+    private ClaimDecisionResult rejected(String reason) {
+        return ClaimDecisionResult.builder()
+                .decision(ClaimDecisionStatus.REJECTED)
+                .conditions(List.of())
+                .matchedClauses(List.of())
+                .confidence(1.0)
+                .reason(reason)
+                .build();
     }
 
     private ClaimDecisionResult manualReview(String reason) {
