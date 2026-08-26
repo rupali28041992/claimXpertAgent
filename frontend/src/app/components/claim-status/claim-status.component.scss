@@ -146,7 +146,7 @@ $font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   align-items: center;
   gap: 6px;
   padding: 10px 22px;
-  background: $blue;
+  background: #496EBD;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -191,7 +191,7 @@ $font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: linear-gradient(135deg, #3FA7D6 0%, #2F91C0 100%);
+  background: #496EBD;
 }
 
 .sidebar-title {
@@ -400,9 +400,9 @@ $font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding: 16px 24px;
   flex-wrap: wrap;
 
-  &.verdict--approved { background: linear-gradient(135deg, #1A5C38, #35A77A); }
-  &.verdict--rejected { background: linear-gradient(135deg, #7A1515, #E06B6B); }
-  &.verdict--review   { background: linear-gradient(135deg, #3A5BAD, #496EBD); }
+  &.verdict--approved { background: linear-gradient(135deg, #479c6eed, #52c296cc); }
+  &.verdict--rejected { background: linear-gradient(135deg, #e35454e3, #e68686d4); }
+  &.verdict--review   { background: linear-gradient(135deg, rgb(52 145 240 / 93%) 0%, rgb(140 216 252 / 91%) 100%); }
 }
 
 .verdict-left {
