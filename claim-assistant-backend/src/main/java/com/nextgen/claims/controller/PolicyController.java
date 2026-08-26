@@ -1,11 +1,12 @@
 package com.nextgen.claims.controller;
 import com.nextgen.claims.dto.PolicyVerifyResponse;
-import org.springframework.web.bind.annotation.*;
 import com.nextgen.claims.dto.PolicyCreateRequest;
 import com.nextgen.claims.model.Policy;
 import com.nextgen.claims.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/policies")
@@ -31,6 +32,11 @@ public class PolicyController {
                     .policyId(policyId)
                     .build();
         }
+    }
+
+    @GetMapping("/by-customer/{customerId}")
+    public List<Policy> getPoliciesByCustomer(@PathVariable String customerId) {
+        return policyService.findByCustomerId(customerId);
     }
 
     @PostMapping

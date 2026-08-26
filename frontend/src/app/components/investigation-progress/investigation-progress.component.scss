@@ -1,12 +1,12 @@
-$blue: #2a69ac;
-$blue-dark: #1a365d;
-$success: #22c55e;
-$warn: #f59e0b;
-$danger: #ef4444;
+$primary:  #496EBD;
+$heading:  #1D526B;
+$success:  #35A77A;
+$warn:     #D99A32;
+$danger:   #E06B6B;
 
 .investigation-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, #dce8f5 0%, #e8f1fb 50%, #f0f5fc 100%);
+  background: linear-gradient(160deg, #EEF1FA 0%, #EEF1FA 50%, #F8FCFE 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,7 +16,7 @@ $danger: #ef4444;
 .investigation-card {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(42, 105, 172, 0.12);
+  box-shadow: 0 8px 32px rgba(22,61,82,.12);
   padding: 2.5rem 2rem;
   max-width: 640px;
   width: 100%;
@@ -27,8 +27,8 @@ $danger: #ef4444;
   margin-bottom: 1.5rem;
 
   .header-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .card-title  { font-size: 1.5rem; font-weight: 700; color: $blue-dark; margin: 0 0 0.4rem; }
-  .card-sub    { color: #64748b; margin: 0; font-size: 0.95rem; }
+  .card-title  { font-size: 1.5rem; font-weight: 700; color: $heading; margin: 0 0 0.4rem; }
+  .card-sub    { color: #829DAA; margin: 0; font-size: 0.95rem; }
 }
 
 .orchestrator-label {
@@ -37,7 +37,7 @@ $danger: #ef4444;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $blue;
+  color: $primary;
   margin-bottom: 1.25rem;
   opacity: 0.7;
 }
@@ -54,7 +54,7 @@ $danger: #ef4444;
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid #C5CEE9;
   border-radius: 10px;
   background: #f8fafc;
   transition: border-color 0.3s, background 0.3s;
@@ -74,8 +74,8 @@ $danger: #ef4444;
 
 .spinner {
   width: 28px; height: 28px;
-  border: 3px solid #e2e8f0;
-  border-top-color: $blue;
+  border: 3px solid #C5CEE9;
+  border-top-color: $primary;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -98,7 +98,7 @@ $danger: #ef4444;
 
   .agent-name {
     font-weight: 600;
-    color: $blue-dark;
+    color: $heading;
     font-size: 0.95rem;
     margin-bottom: 0.3rem;
   }

@@ -85,4 +85,10 @@ export class ClaimsService {
       `${this.base}/claims/policy/${policyNumber}`
     );
   }
+
+  getPoliciesForUser(customerId: string): Observable<import('../models/claim-api.model').PolicyRecord[]> {
+    return this.http.get<import('../models/claim-api.model').PolicyRecord[]>(
+      `${this.base}/policies/by-customer/${customerId}`
+    );
+  }
 }

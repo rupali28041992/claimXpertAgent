@@ -96,6 +96,13 @@ public class ClaimOrchestrator {
             String aiFailureReason = (decision != null && decision.isAiError())
                     ? decision.getReason() : null;
 
+            // Documents may all be valid, but if the AI decision failed the claim is
+            // not truly COMPLETED — downgrade so the UI reflects the partial outcome.
+            ClaimProcessingStatus finalStatus = context.getStatus();
+            if (aiFailureReason != null && finalStatus == ClaimProcessingStatus.COMPLETED) {
+                finalStatus = ClaimProcessingStatus.PARTIALLY_COMPLETED;
+            }
+
             ClaimEntity entity = claimEntityRepository.findById(context.getClaimId())
                     .orElse(ClaimEntity.builder()
                             .claimId(context.getClaimId())
@@ -107,13 +114,13 @@ public class ClaimOrchestrator {
 
             entity.setDocuments(context.getDocuments());
             entity.setDecision(decision);
-            entity.setStatus(context.getStatus());
+            entity.setStatus(finalStatus);
             entity.setAiFailureReason(aiFailureReason);
             entity.setUpdatedAt(Instant.now());
             claimEntityRepository.save(entity);
 
             log.info("[ClaimOrchestrator] claim={} persisted status={} aiError={}",
-                    context.getClaimId(), context.getStatus(), aiFailureReason != null);
+                    context.getClaimId(), finalStatus, aiFailureReason != null);
         } catch (Exception e) {
             log.error("[ClaimOrchestrator] claim={} failed to persist final state", context.getClaimId(), e);
         }

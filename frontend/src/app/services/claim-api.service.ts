@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  ClaimEntityResponse,
   ClaimSubmitResponse,
   ClaimTypeConfig,
   PolicyLookupResponse
@@ -27,5 +28,17 @@ export class ClaimApiService {
     formData.append('claim', JSON.stringify(claim));
     files.forEach(file => formData.append('files', file));
     return this.http.post<ClaimSubmitResponse>(`${API_BASE_URL}/submit`, formData);
+  }
+
+  getClaim(claimId: string): Observable<ClaimEntityResponse> {
+    return this.http.get<ClaimEntityResponse>(`${API_BASE_URL}/${claimId}`);
+  }
+
+  getAllClaims(): Observable<ClaimEntityResponse[]> {
+    return this.http.get<ClaimEntityResponse[]>(API_BASE_URL);
+  }
+
+  getClaimsByCustomer(customerId: string): Observable<ClaimEntityResponse[]> {
+    return this.http.get<ClaimEntityResponse[]>(`${API_BASE_URL}/by-customer/${customerId}`);
   }
 }

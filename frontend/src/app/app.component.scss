@@ -1,15 +1,15 @@
 // ─── TOKENS ──────────────────────────────────────────────────
-$blue:        #2a69ac;
-$blue-dark:   #1a365d;
-$muted:       #64748b;
-$success:     #22c55e;
+$primary:     #496EBD;
+$heading:     #1D526B;
+$muted:       #829DAA;
+$success:     #35A77A;
 $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
 :host {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(160deg, #dce8f5 0%, #e8f1fb 55%, #f0f5fc 100%);
+  background: #F8FCFE;
   font-family: $font;
   -webkit-font-smoothing: antialiased;
 }
@@ -20,8 +20,8 @@ $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 .page-header {
   background: #ffffff;
   backdrop-filter: none;
-  border-bottom: 1px solid #dde6f0;
-  box-shadow: 0 1px 6px rgba(42,105,172,.08);
+  border-bottom: 1px solid #E1EFF4;
+  box-shadow: 0 1px 6px rgba(73,110,189,.08);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -43,33 +43,38 @@ $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   gap: 9px;
   font-size: 1rem;
   font-weight: 800;
-  color: $blue-dark;
+  color: $heading;
   letter-spacing: -.2px;
   text-decoration: none;
 }
 
 .page-nav {
   display: flex;
+  align-items: center;
   gap: 24px;
   margin-left: 8px;
 
   a {
-    font-size: 0.83rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.93rem;
     color: $muted;
     text-decoration: none;
     transition: color .15s;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: -.1px;
+    padding-bottom: 3px;
+    border-bottom: 2.5px solid transparent;
 
-    &:hover { color: $blue-dark; }
+    &:hover { color: $heading; }
   }
 
   .nav-active {
-    color: $blue;
+    color: $primary;
     font-weight: 700;
-    border-bottom: 2px solid $blue;
-    padding-bottom: 2px;
+    border-bottom-color: $primary;
 
-    &:hover { color: $blue; }
+    &:hover { color: $primary; }
   }
 }
 
@@ -95,7 +100,7 @@ $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 // ═══════════════════════════════════════════════════════════
 .page-footer {
   background: #ffffff;
-  border-top: 1px solid #dde6f0;
+  border-top: 1px solid #E1EFF4;
   padding: 20px 24px;
 }
 
@@ -128,7 +133,7 @@ $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     text-decoration: none;
     transition: color .15s;
 
-    &:hover { color: $blue-dark; }
+    &:hover { color: $heading; }
   }
 }
 
@@ -137,6 +142,44 @@ $font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #94a3b8;
 }
 
+// ═══════════════════════════════════════════════════════════
+// MAIN CONTENT WRAPPER
+// ═══════════════════════════════════════════════════════════
+.page-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Logout button ─────────────────────────────────────────
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #E1EFF4;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $muted;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+
+  &:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fca5a5;
+  }
+}
+
+// ─── User name label ───────────────────────────────────────
+.user-name {
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
-  .page-nav { display: none; }
+  .page-nav   { display: none; }
+  .user-name  { display: none; }
 }

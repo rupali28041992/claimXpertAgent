@@ -1,105 +1,192 @@
 <!-- ══ MAIN CONTENT ═════════════════════════════════════════ -->
 <main class="portal-main">
-  <div class="portal-card">
 
-    <!-- Card header -->
-    <div class="card-header">
-      <div class="card-header-left">
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1.8"/>
-            <path d="M8 12l2.5 2.5L16 9" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="card-title">File a New Claim</div>
-          <div class="card-sub">AI-assisted · Takes under 3 minutes</div>
-        </div>
-      </div>
-      @if (!isLoading && dynamicQuestions.length > 0 && policyCheckState === 'found') {
-        <div class="card-step-badge">
-          {{ answeredFields.length }}&nbsp;/&nbsp;{{ totalApplicableFields() }} fields
-        </div>
-      }
-    </div>
+  <!-- Full-bleed banner — outside the max-width wrapper -->
+  <div class="wizard-heading">
+    <div class="wizard-heading-inner">
 
-    <!-- Progress bar -->
-    @if (!isLoading && dynamicQuestions.length > 0 && policyCheckState === 'found') {
-      <div class="progress-track">
-        <div class="progress-fill" [style.width.%]="progressPercent()"></div>
-      </div>
-    }
+      <!-- Creative illustration -->
+      <div class="banner-illustration" aria-hidden="true">
+        <svg viewBox="0 0 160 130" width="180" height="146" xmlns="http://www.w3.org/2000/svg">
+          <!-- Atmosphere rings -->
+          <circle cx="68" cy="65" r="58" fill="none" stroke="rgba(63,167,214,0.14)" stroke-width="1.5"/>
+          <circle cx="68" cy="65" r="44" fill="none" stroke="rgba(63,167,214,0.20)" stroke-width="1.5"/>
 
-    <!-- ── Intro agent message ── -->
-    <div class="intro-section">
-      <div class="intro-avatar">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-          <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
-          <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- Clipboard shadow -->
+          <rect x="21" y="23" width="64" height="84" rx="8" fill="rgba(22,61,82,0.07)"/>
+          <!-- Clipboard body -->
+          <rect x="19" y="21" width="64" height="84" rx="8" fill="rgba(255,255,255,0.88)" stroke="rgba(63,167,214,0.30)" stroke-width="1.5"/>
+          <!-- Header band -->
+          <rect x="19" y="21" width="64" height="18" rx="8" fill="rgba(63,167,214,0.16)"/>
+          <rect x="19" y="31" width="64" height="8" fill="rgba(63,167,214,0.10)"/>
+          <!-- Clip holder -->
+          <rect x="35" y="14" width="30" height="14" rx="7" fill="rgba(255,255,255,0.80)" stroke="rgba(63,167,214,0.40)" stroke-width="1.2"/>
+          <!-- Header label -->
+          <rect x="27" y="25" width="28" height="5" rx="2.5" fill="rgba(22,61,82,0.18)"/>
+          <rect x="59" y="25" width="18" height="5" rx="2.5" fill="rgba(63,167,214,0.65)"/>
+
+          <!-- Checkbox row 1 — ticked -->
+          <rect x="27" y="48" width="10" height="10" rx="2.5" fill="rgba(46,197,113,0.25)" stroke="rgba(46,197,113,0.65)" stroke-width="1.2"/>
+          <path d="M29.5 53l2 2 4-4" stroke="#2EC571" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <rect x="42" y="51" width="32" height="2.5" rx="1.25" fill="rgba(22,61,82,0.16)"/>
+
+          <!-- Checkbox row 2 — ticked -->
+          <rect x="27" y="63" width="10" height="10" rx="2.5" fill="rgba(46,197,113,0.25)" stroke="rgba(46,197,113,0.65)" stroke-width="1.2"/>
+          <path d="M29.5 68l2 2 4-4" stroke="#2EC571" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <rect x="42" y="66" width="26" height="2.5" rx="1.25" fill="rgba(22,61,82,0.12)"/>
+
+          <!-- Checkbox row 3 — active/being filled -->
+          <rect x="27" y="78" width="10" height="10" rx="2.5" fill="rgba(63,167,214,0.22)" stroke="rgba(63,167,214,0.65)" stroke-width="1.2"/>
+          <rect x="42" y="81" width="30" height="2.5" rx="1.25" fill="rgba(22,61,82,0.10)"/>
+
+          <!-- Text input at bottom -->
+          <rect x="25" y="93" width="52" height="9" rx="4.5" fill="rgba(63,167,214,0.08)" stroke="rgba(63,167,214,0.28)" stroke-width="1"/>
+          <rect x="29" y="96.5" width="22" height="2" rx="1" fill="rgba(22,61,82,0.18)"/>
+          <rect x="72" y="96" width="1.5" height="4" rx="0.75" fill="#3FA7D6"/>
+
+          <!-- Pen overlapping from top-right -->
+          <g transform="rotate(-35, 112, 40)">
+            <rect x="108" y="18" width="9" height="44" rx="4.5" fill="rgba(63,167,214,0.22)" stroke="rgba(63,167,214,0.45)" stroke-width="1.2"/>
+            <rect x="109.5" y="20" width="2.5" height="28" rx="1.25" fill="rgba(63,167,214,0.14)"/>
+            <rect x="108" y="56" width="9" height="6" rx="0" fill="rgba(63,167,214,0.28)"/>
+            <polygon points="108,62 117,62 112.5,70" fill="rgba(22,61,82,0.32)"/>
+          </g>
+          <!-- Ink dot at pen tip -->
+          <circle cx="98" cy="88" r="2.5" fill="#3FA7D6"/>
+
+          <!-- Upload cloud (top right) -->
+          <circle cx="134" cy="34" r="16" fill="rgba(63,167,214,0.10)" stroke="rgba(63,167,214,0.25)" stroke-width="1"/>
+          <path d="M134 42l0-13" stroke="rgba(63,167,214,0.65)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M130 33l4-5 4 5" stroke="rgba(63,167,214,0.65)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <rect x="128" y="42" width="12" height="2" rx="1" fill="rgba(63,167,214,0.40)"/>
+
+          <!-- AI sparkle (bottom right) -->
+          <path d="M146 78 L148 83 L153 85 L148 87 L146 92 L144 87 L139 85 L144 83 Z" fill="rgba(63,167,214,0.35)"/>
+
+          <!-- Floating dots -->
+          <circle cx="12" cy="38" r="2"   fill="rgba(63,167,214,0.28)"/>
+          <circle cx="9"  cy="88" r="1.5" fill="rgba(63,167,214,0.20)"/>
+          <circle cx="150" cy="108" r="2" fill="rgba(63,167,214,0.24)"/>
         </svg>
       </div>
-      <div class="intro-bubble">
-        <div class="intro-agent-name">Claims Assistant</div>
-        <p>Hello! 👋 I'm here to help you file your insurance claim quickly and securely.
-          I'll ask you a few questions — new fields will appear as you go, and you can
-          edit any answer at any time.</p>
-        @if (policyCheckState === 'found') {
-          <p class="intro-note">Policy verified — please fill in the claim details below.</p>
-        } @else {
-          <p class="intro-note">Please enter your policy number below to get started.</p>
-        }
+
+      <!-- Text -->
+      <div class="banner-text">
+        <h1 class="wizard-title">File a New Claim</h1>
+        <p class="wizard-subtitle">Answer a few questions, upload your supporting documents, and our AI agent will deliver an instant claim decision</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="wizard-wrap">
+
+    <!-- Step indicator -->
+    <div class="wizard-stepper">
+      <div class="wstep" [class.wstep--active]="currentStep === 1" [class.wstep--done]="currentStep > 1">
+        <div class="wstep-circle">
+          @if (currentStep > 1) {
+            <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+              <path d="M2 7l3.5 3.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          } @else { 1 }
+        </div>
+        <span class="wstep-label">Verify Policy</span>
+      </div>
+
+      <div class="wstep" [class.wstep--active]="currentStep === 2" [class.wstep--done]="currentStep > 2">
+        <div class="wstep-circle">
+          @if (currentStep > 2) {
+            <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+              <path d="M2 7l3.5 3.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          } @else { 2 }
+        </div>
+        <span class="wstep-label">Claim Details</span>
+      </div>
+
+      <div class="wstep" [class.wstep--active]="currentStep === 3" [class.wstep--done]="currentStep > 3">
+        <div class="wstep-circle">
+          @if (currentStep > 3) {
+            <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+              <path d="M2 7l3.5 3.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          } @else { 3 }
+        </div>
+        <span class="wstep-label">Upload Documents</span>
+      </div>
+
+      <div class="wstep" [class.wstep--active]="currentStep === 4" [class.wstep--done]="isSubmitted">
+        <div class="wstep-circle">
+          @if (isSubmitted) {
+            <svg viewBox="0 0 14 14" fill="none" width="13" height="13">
+              <path d="M2 7l3.5 3.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          } @else { 4 }
+        </div>
+        <span class="wstep-label">Review &amp; Submit</span>
       </div>
     </div>
+
+    <!-- Form card -->
+    <div class="portal-card">
 
     <!-- ── Policy gate ── -->
     @if (policyCheckState !== 'found') {
       <div class="policy-gate">
 
-        @if (policyCheckState === 'idle' || policyCheckState === 'checking') {
-          <div class="active-question">
-            Please enter your policy number to begin your claim <span class="req-star">*</span>
+        <!-- Loading skeleton -->
+        @if (isPoliciesLoading) {
+          <div class="policy-loading">
+            <span class="btn-spinner btn-spinner--dark"></span>
+            <span class="policy-loading-text">Loading your policies…</span>
           </div>
-          <div class="policy-input-row">
-            <div class="input-shell" style="flex:1">
-              <input type="text" class="field-input"
-                     placeholder="e.g. POL-100234"
-                     [value]="policyNumber"
-                     (input)="policyNumber = $any($event.target).value"
-                     (keydown.enter)="checkPolicy()"
-                     [disabled]="policyCheckState === 'checking'" />
-            </div>
-            <button class="btn-check-policy"
-                    (click)="checkPolicy()"
-                    [disabled]="policyCheckState === 'checking' || !policyNumber.trim()">
-              @if (policyCheckState === 'checking') {
-                <span class="btn-spinner"></span> Verifying…
-              } @else {
-                Verify Policy
-              }
-            </button>
-          </div>
-          <div class="field-hint">Your policy number appears on your certificate of insurance or renewal notice</div>
         }
 
-        @if (policyCheckState === 'not-found') {
+        <!-- Policy dropdown -->
+        @if (!isPoliciesLoading && userPolicies.length > 0 && policyCheckState !== 'no-policies') {
+          <div class="active-question">
+            Select a policy to begin your claim <span class="req-star">*</span>
+          </div>
+          <div class="policy-select-wrap">
+            <div class="input-shell policy-select-shell">
+              <select class="field-select policy-select"
+                      [(ngModel)]="selectedPolicyNumber"
+                      (ngModelChange)="selectPolicy($event)"
+                      [ngModelOptions]="{standalone: true}">
+                <option value="" disabled selected>— Select your policy —</option>
+                @for (p of userPolicies; track p.policyNumber) {
+                  <option [value]="p.policyNumber">
+                    {{ p.policyNumber }} · {{ p.claimType }} · {{ p.policyholderName }}
+                  </option>
+                }
+              </select>
+              <svg class="select-icon" viewBox="0 0 20 20" fill="none" width="16" height="16">
+                <path d="M5 8l5 5 5-5" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="field-hint">Select the policy for which you wish to raise a claim</div>
+        }
+
+        <!-- No policies state -->
+        @if (!isPoliciesLoading && (policyCheckState === 'no-policies' || userPolicies.length === 0)) {
           <div class="policy-not-found">
             <div class="policy-nf-header">
               <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                <circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="1.8"/>
-                <path d="M12 7v5M12 16h.01" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11 5.25-.85 9-5.75 9-11V7l-9-5z" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M12 8v4M12 15h.01" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              <span class="policy-nf-title">Policy Not Located</span>
+              <span class="policy-nf-title" style="color:#92400e">No Active Policies Found</span>
             </div>
             <p class="policy-nf-body">
-              We were unable to locate an active policy under the reference number
-              <strong>{{ policyNumber }}</strong>. Please verify your policy number on your
-              certificate of insurance or renewal notice and try again. If you believe this
-              is an error, please contact our support team before proceeding.
+              There are no active insurance policies linked to your account at this time.
+              If you believe this is an error or would like to associate a policy with your account,
+              please reach out to our support team for assistance.
             </p>
-            <div class="policy-nf-ref">Reference queried: {{ policyNumber }}</div>
-            <button class="btn-ghost" style="margin-top:14px" (click)="retryPolicy()">
-              ← Try a different policy number
-            </button>
+            <div class="policy-nf-ref" style="border-color:#fde68a;background:#fffbeb;color:#92400e">
+              Account: {{ authService.currentUser?.userId }}
+            </div>
           </div>
         }
 
@@ -490,21 +577,74 @@
           <!-- Submitted: polling / processing state -->
           @if (isSubmitted && isPolling) {
             <div class="agent-confirm">
-              <div class="intro-avatar agent-confirm-avatar">
-                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
-                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <div class="intro-avatar agent-confirm-avatar agent-avatar--ai">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                  <circle cx="12" cy="12" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                  <path d="M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7l1.4-1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="2" fill="white"/>
                 </svg>
               </div>
-              <div class="agent-confirm-bubble">
-                <div class="intro-agent-name">Claims Assistant</div>
-                <div class="agent-confirm-check">
-                  <span class="btn-spinner btn-spinner--dark"></span>
-                  <span class="agent-confirm-title">Analyzing your documents…</span>
+              <div class="agent-confirm-bubble agent-confirm-bubble--pipeline">
+                <div class="intro-agent-name">ClaimXpert AI</div>
+
+                <div class="pipeline-header">
+                  <span class="pipeline-ref">Ref: <strong>{{ claimRef }}</strong></span>
                 </div>
-                <p>Your claim has been received. Our AI is reviewing the documents and policy clauses. This usually takes 15–30 seconds.</p>
-                <div class="agent-confirm-ref">
-                  Claim Reference: <strong>{{ claimRef }}</strong>
+
+                <div class="pipeline-track">
+                  @for (agent of agentPipeline; track agent.name; let i = $index) {
+                    <div class="pipeline-row"
+                         [class.pipeline-row--done]="i < agentStage"
+                         [class.pipeline-row--active]="i === agentStage"
+                         [class.pipeline-row--waiting]="i > agentStage">
+
+                      <div class="pipeline-icon-col">
+                        <!-- Done -->
+                        @if (i < agentStage) {
+                          <div class="pipeline-badge pipeline-badge--done">
+                            <svg viewBox="0 0 14 14" fill="none" width="10" height="10">
+                              <path d="M2.5 7l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </div>
+                        }
+                        <!-- Active -->
+                        @if (i === agentStage) {
+                          <div class="pipeline-badge pipeline-badge--active">
+                            <span class="pipeline-spinner"></span>
+                          </div>
+                        }
+                        <!-- Waiting -->
+                        @if (i > agentStage) {
+                          <div class="pipeline-badge pipeline-badge--waiting">
+                            <span class="pipeline-wait-dot"></span>
+                          </div>
+                        }
+                        <!-- Connector line (not after last) -->
+                        @if (i < agentPipeline.length - 1) {
+                          <div class="pipeline-connector"
+                               [class.pipeline-connector--filled]="i < agentStage"></div>
+                        }
+                      </div>
+
+                      <div class="pipeline-text-col">
+                        <div class="pipeline-agent-name">{{ agent.name }}</div>
+                        <div class="pipeline-agent-tech">{{ agent.techName }}</div>
+                        @if (i === agentStage) {
+                          <div class="pipeline-agent-status">{{ agent.desc[0] }}</div>
+                        } @else if (i < agentStage) {
+                          <div class="pipeline-agent-status pipeline-agent-status--done">Completed</div>
+                        } @else {
+                          <div class="pipeline-agent-status pipeline-agent-status--wait">Queued</div>
+                        }
+                      </div>
+
+                    </div>
+                  }
+                </div>
+
+                <div class="pipeline-footer">
+                  Processing usually takes 15–30 seconds. Results will appear automatically.
                 </div>
               </div>
             </div>
@@ -513,14 +653,17 @@
           <!-- Submitted: final decision result -->
           @if (isSubmitted && !isPolling && submitResult?.decision) {
             <div class="agent-confirm">
-              <div class="intro-avatar agent-confirm-avatar">
-                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
-                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <div class="intro-avatar agent-confirm-avatar agent-avatar--ai">
+                <!-- AI brain-circuit icon -->
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                  <circle cx="12" cy="12" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                  <path d="M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7l1.4-1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="2" fill="white"/>
                 </svg>
               </div>
               <div class="agent-confirm-bubble">
-                <div class="intro-agent-name">Claims Assistant</div>
+                <div class="intro-agent-name">ClaimXpert AI</div>
                 <div class="agent-confirm-check">
                   <div class="success-circle success-circle--sm">
                     <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
@@ -569,6 +712,14 @@
                 <div class="agent-confirm-ref">
                   Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>
+
+                <button class="btn-view-details" (click)="goToClaimStatus()">
+                  <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  View Full Claim Details
+                </button>
               </div>
             </div>
           }
@@ -576,14 +727,16 @@
           <!-- Submitted: completed but no decision (edge case) -->
           @if (isSubmitted && !isPolling && !submitResult?.decision) {
             <div class="agent-confirm">
-              <div class="intro-avatar agent-confirm-avatar">
-                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-                  <circle cx="12" cy="8" r="4" stroke="white" stroke-width="1.6"/>
-                  <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+              <div class="intro-avatar agent-confirm-avatar agent-avatar--ai">
+                <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                  <circle cx="12" cy="12" r="4" stroke="white" stroke-width="1.6"/>
+                  <path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                  <path d="M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7l1.4-1.4" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="2" fill="white"/>
                 </svg>
               </div>
               <div class="agent-confirm-bubble">
-                <div class="intro-agent-name">Claims Assistant</div>
+                <div class="intro-agent-name">ClaimXpert AI</div>
                 <div class="agent-confirm-check">
                   <div class="success-circle success-circle--sm">
                     <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
@@ -596,6 +749,13 @@
                 <div class="agent-confirm-ref">
                   Claim Reference: <strong>{{ submitResult?.claimId }}</strong>
                 </div>
+                <button class="btn-view-details" (click)="goToClaimStatus()">
+                  <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                  View Full Claim Details
+                </button>
               </div>
             </div>
           }
@@ -609,8 +769,9 @@
       <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
         <path d="M8 1L2 4v4c0 3.3 2.3 6.4 6 7 3.7-.6 6-3.7 6-7V4L8 1z" fill="#94a3b8"/>
       </svg>
-      256-bit SSL Encrypted &nbsp;·&nbsp; Your data is never shared
+      ClaimXpert AI &nbsp;·&nbsp; Data used solely for claim assessment
     </div>
 
-  </div>
+    </div><!-- /portal-card -->
+  </div><!-- /wizard-wrap -->
 </main>

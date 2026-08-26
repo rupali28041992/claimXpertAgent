@@ -1,0 +1,294 @@
+<div class="status-host">
+
+  <!-- Full-bleed banner -->
+  <div class="page-heading">
+    <div class="page-heading-inner">
+
+      <!-- Creative illustration -->
+      <div class="banner-illustration" aria-hidden="true">
+        <svg viewBox="0 0 160 130" width="180" height="146" xmlns="http://www.w3.org/2000/svg">
+          <!-- Radar pulse rings -->
+          <circle cx="72" cy="65" r="60" fill="none" stroke="rgba(63,167,214,0.12)" stroke-width="1.5"/>
+          <circle cx="72" cy="65" r="46" fill="none" stroke="rgba(63,167,214,0.17)" stroke-width="1.5"/>
+          <circle cx="72" cy="65" r="32" fill="none" stroke="rgba(63,167,214,0.22)" stroke-width="1.5"/>
+
+          <!-- Document shadow -->
+          <rect x="20" y="16" width="68" height="86" rx="9" fill="rgba(22,61,82,0.07)"/>
+          <!-- Document body -->
+          <rect x="18" y="14" width="68" height="86" rx="9" fill="rgba(255,255,255,0.88)" stroke="rgba(63,167,214,0.30)" stroke-width="1.5"/>
+          <!-- Document header band -->
+          <rect x="18" y="14" width="68" height="22" rx="9" fill="rgba(63,167,214,0.16)"/>
+          <rect x="18" y="27" width="68" height="9" fill="rgba(63,167,214,0.10)"/>
+          <!-- Claim ID tag in header -->
+          <rect x="26" y="18" width="36" height="10" rx="5" fill="rgba(255,255,255,0.80)" stroke="rgba(63,167,214,0.35)" stroke-width="1"/>
+          <rect x="29" y="21" width="10" height="4" rx="2" fill="rgba(22,61,82,0.22)"/>
+          <rect x="42" y="22" width="16" height="2.5" rx="1.25" fill="rgba(22,61,82,0.16)"/>
+          <!-- Timestamp chip -->
+          <rect x="68" y="19" width="12" height="8" rx="4" fill="rgba(63,167,214,0.65)"/>
+          <rect x="70" y="22" width="8" height="1.8" rx="0.9" fill="rgba(22,61,82,0.55)"/>
+
+          <!-- Content lines -->
+          <rect x="27" y="46" width="50" height="3" rx="1.5" fill="rgba(22,61,82,0.15)"/>
+          <rect x="27" y="53" width="40" height="3" rx="1.5" fill="rgba(22,61,82,0.10)"/>
+          <rect x="27" y="60" width="46" height="3" rx="1.5" fill="rgba(22,61,82,0.13)"/>
+          <rect x="27" y="67" width="32" height="3" rx="1.5" fill="rgba(22,61,82,0.09)"/>
+
+          <!-- Status pill — APPROVED -->
+          <rect x="22" y="79" width="56" height="15" rx="7.5" fill="rgba(46,125,82,0.18)" stroke="rgba(46,197,113,0.55)" stroke-width="1.2"/>
+          <circle cx="33" cy="86.5" r="5" fill="#2EC571"/>
+          <path d="M31 86.5l1.5 1.5 3.5-3.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <rect x="42" y="84" width="28" height="2.5" rx="1.25" fill="rgba(22,61,82,0.30)"/>
+          <rect x="42" y="88.5" width="20" height="2" rx="1" fill="rgba(22,61,82,0.18)"/>
+
+          <!-- Magnifying glass overlay -->
+          <circle cx="107" cy="52" r="22" fill="rgba(29,61,76,0.85)" stroke="rgba(63,167,214,0.40)" stroke-width="2.5"/>
+          <!-- Inner lens highlight -->
+          <circle cx="107" cy="52" r="22" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+          <!-- Mini bar chart inside lens -->
+          <rect x="97"  cy="43" x="97"  y="43" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.30)"/>
+          <rect x="104" y="39" width="5" height="18" rx="1.5" fill="rgba(120,175,197,0.90)"/>
+          <rect x="111" y="41" width="5" height="16" rx="1.5" fill="rgba(255,255,255,0.22)"/>
+          <!-- Trend line over bars -->
+          <polyline points="99.5,52 106.5,46 113.5,49" fill="none" stroke="rgba(46,197,113,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="99.5" cy="52"  r="2" fill="#2EC571"/>
+          <circle cx="106.5" cy="46" r="2" fill="#2EC571"/>
+          <circle cx="113.5" cy="49" r="2" fill="#2EC571"/>
+          <!-- Handle -->
+          <line x1="123" y1="68" x2="134" y2="79" stroke="rgba(22,61,82,0.20)" stroke-width="5" stroke-linecap="round"/>
+          <line x1="123" y1="68" x2="134" y2="79" stroke="rgba(22,61,82,0.40)" stroke-width="2.5" stroke-linecap="round"/>
+
+          <!-- Floating sparkles -->
+          <circle cx="140" cy="22" r="2.5" fill="rgba(63,167,214,0.35)"/>
+          <circle cx="148" cy="38" r="1.5" fill="rgba(63,167,214,0.55)"/>
+          <circle cx="12"  cy="100" r="2"  fill="rgba(63,167,214,0.25)"/>
+          <circle cx="8"   cy="30"  r="1.8" fill="rgba(63,167,214,0.20)"/>
+        </svg>
+      </div>
+
+      <!-- Text -->
+      <div class="banner-text">
+        <h1 class="page-title">Check Claim Status</h1>
+        <p class="page-sub">Enter your Claim ID or select a recent submission below</p>
+      </div>
+
+    </div>
+  </div>
+
+  <main class="status-page">
+
+  <!-- ── SEARCH BAR ────────────────────────────────────────── -->
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16">
+        <circle cx="11" cy="11" r="8" stroke="#64748B" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <input
+        class="search-input"
+        type="text"
+        [(ngModel)]="searchId"
+        placeholder="e.g. clm_a1b2c3d4"
+        (keyup.enter)="search()"
+      />
+    </div>
+    <button class="btn-search" (click)="search()" [disabled]="!searchId.trim() || loadingDetail">
+      @if (loadingDetail) { <span class="spinner-sm"></span> Searching… }
+      @else { Search }
+    </button>
+  </div>
+  @if (searchError) {
+    <p class="search-error">{{ searchError }}</p>
+  }
+
+  <!-- ── MAIN LAYOUT ───────────────────────────────────────── -->
+  <div class="status-layout">
+
+    <!-- LEFT: claims list ──────────────────────────────────── -->
+    <aside class="claims-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Submitted Claims</span>
+        <span class="sidebar-count">{{ claims.length }}</span>
+      </div>
+
+      @if (loadingList) {
+        <div class="list-loading">
+          <span class="spinner-sm"></span> Loading…
+        </div>
+      } @else if (listError) {
+        <div class="list-error">{{ listError }}</div>
+      } @else if (claims.length === 0) {
+        <div class="list-empty">No claims submitted yet.</div>
+      } @else {
+        <ul class="claims-list">
+          @for (claim of claims; track claim.claimId) {
+            <li
+              class="claim-item"
+              [class.claim-item--active]="selectedClaim?.claimId === claim.claimId"
+              (click)="select(claim)"
+            >
+              <div class="claim-item-top">
+                <span class="claim-item-id">{{ claim.claimId }}</span>
+                <span class="status-pill {{ statusClass(claim.status) }}">
+                  {{ statusLabel(claim.status) }}
+                </span>
+              </div>
+              <div class="claim-item-reason">{{ claim.claimReason || claim.claimType }}</div>
+              <div class="claim-item-date">{{ formatDate(claim.createdAt) }}</div>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+
+    <!-- RIGHT: detail panel ────────────────────────────────── -->
+    <section class="detail-panel">
+      @if (!selectedClaim) {
+        <div class="detail-empty">
+          <svg viewBox="0 0 64 64" fill="none" width="56" height="56">
+            <circle cx="32" cy="32" r="30" stroke="#e2e8f0" stroke-width="2"/>
+            <path d="M22 32h20M32 22v20" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <p>Select a claim from the list<br>or search by Claim ID</p>
+        </div>
+      } @else {
+        <!-- Claim header ────────────────────────────────────── -->
+        <div class="detail-header">
+          <div class="detail-id-row">
+            <span class="detail-id">{{ selectedClaim.claimId }}</span>
+            <span class="status-pill {{ statusClass(selectedClaim.status) }} status-pill--lg">
+              {{ statusLabel(selectedClaim.status) }}
+            </span>
+          </div>
+          <div class="detail-meta">
+            <span class="meta-chip">{{ selectedClaim.claimType }}</span>
+            <span class="meta-sep">·</span>
+            <span class="meta-reason">{{ selectedClaim.claimReason }}</span>
+          </div>
+          <div class="detail-dates">
+            <span>Submitted: {{ formatDate(selectedClaim.createdAt) }}</span>
+            <span>Updated: {{ formatDate(selectedClaim.updatedAt) }}</span>
+          </div>
+        </div>
+
+        <!-- Decision banner ─────────────────────────────────── -->
+        @if (selectedClaim.decision) {
+          <div class="verdict-banner {{ decisionClass(selectedClaim.decision.decision) }}">
+            <div class="verdict-left">
+              <span class="verdict-label">{{ decisionLabel(selectedClaim.decision.decision) }}</span>
+              <span class="verdict-sub">AI Confidence: {{ confidencePct(selectedClaim) }}%</span>
+            </div>
+            <div class="confidence-bar-wrap">
+              <div class="confidence-bar">
+                <div class="confidence-fill" [style.width.%]="confidencePct(selectedClaim)"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reasoning ───────────────────────────────────────── -->
+          <div class="detail-section">
+            <div class="section-label">AI Reasoning</div>
+            <p class="reasoning-text">{{ selectedClaim.decision.reason }}</p>
+          </div>
+
+          <!-- Key findings ────────────────────────────────────── -->
+          @if (selectedClaim.decision.keyFindings?.length) {
+            <div class="detail-section">
+              <div class="section-label">Key Findings</div>
+              <ul class="findings-list">
+                @for (f of selectedClaim.decision.keyFindings!; track f) {
+                  <li>{{ f }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Conditions ──────────────────────────────────────── -->
+          @if (selectedClaim.decision.conditions?.length) {
+            <div class="detail-section">
+              <div class="section-label">Conditions</div>
+              <ul class="findings-list findings-list--warn">
+                @for (c of selectedClaim.decision.conditions; track c) {
+                  <li>{{ c }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Matched clauses ─────────────────────────────────── -->
+          @if (selectedClaim.decision.matchedClauses?.length) {
+            <div class="detail-section">
+              <div class="section-label">Matched Policy Clauses</div>
+              <div class="clause-tags">
+                @for (clause of selectedClaim.decision.matchedClauses; track clause) {
+                  <span class="clause-tag">{{ clause }}</span>
+                }
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="detail-section">
+            <div class="pending-notice">
+              <span class="spinner-sm"></span>
+              Decision is being processed — please check back shortly.
+            </div>
+          </div>
+        }
+
+        <!-- Documents ───────────────────────────────────────── -->
+        @if (selectedClaim.documents?.length) {
+          <div class="detail-section">
+            <div class="section-label">Submitted Documents</div>
+            <div class="docs-grid">
+              @for (doc of selectedClaim.documents!; track doc.documentId) {
+                <div class="doc-card" [class.doc-card--invalid]="!doc.valid">
+                  <div class="doc-card-top">
+                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z" stroke="#64748B" stroke-width="1.8" stroke-linejoin="round"/>
+                      <path d="M14 2v6h6" stroke="#64748B" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="doc-name" [title]="doc.fileName">{{ doc.fileName }}</span>
+                    @if (doc.valid) {
+                      <span class="doc-badge doc-badge--ok">Valid</span>
+                    } @else {
+                      <span class="doc-badge doc-badge--err">Invalid</span>
+                    }
+                  </div>
+                  @if (doc.errors?.length) {
+                    <ul class="doc-errors">
+                      @for (e of doc.errors; track e) { <li>{{ e }}</li> }
+                    </ul>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Answers ─────────────────────────────────────────── -->
+        @if (answersEntries(selectedClaim.answers).length) {
+          <div class="detail-section">
+            <div class="section-label">Your Responses</div>
+            <div class="answers-table">
+              @for (entry of answersEntries(selectedClaim.answers); track entry[0]) {
+                <div class="answer-row">
+                  <span class="answer-q">{{ entry[0] }}</span>
+                  <span class="answer-a">{{ entry[1] }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- AI error notice ─────────────────────────────────── -->
+        @if (selectedClaim.aiFailureReason) {
+          <div class="detail-section">
+            <div class="ai-error-notice">
+              <strong>AI Note:</strong> {{ selectedClaim.aiFailureReason }}
+            </div>
+          </div>
+        }
+      }
+    </section>
+  </div>
+  </main>
+</div>

@@ -28,7 +28,7 @@ export interface DocumentResult {
   fileName: string;
   documentId: string;
   valid: boolean;
-  errors: string[];
+  errors: string[] | null;
   ocrText: string | null;
   status: 'COMPLETED' | 'FAILED';
 }
@@ -36,8 +36,8 @@ export interface DocumentResult {
 /** Mirrors com.nextgen.claims.docvalidation.model.ClaimDecisionResult - Ollama's final call. */
 export interface ClaimDecisionResult {
   decision: 'APPROVED' | 'REJECTED' | 'MANUAL_REVIEW';
-  conditions: string[];
-  matchedClauses: string[];
+  conditions: string[] | null;
+  matchedClauses: string[] | null;
   confidence: number;
   reason: string;
   keyFindings?: string[];
@@ -53,6 +53,20 @@ export interface ClaimSubmitResponse {
   documents: DocumentResult[] | null;
   decision: ClaimDecisionResult | null;
   aiFailureReason?: string | null;
+}
+
+/** Full persisted claim document — mirrors ClaimEntity from the backend. */
+export interface ClaimEntityResponse {
+  claimId: string;
+  claimType: string;
+  claimReason: string;
+  answers: Record<string, unknown>;
+  documents: DocumentResult[] | null;
+  decision: ClaimDecisionResult | null;
+  status: ClaimStatus;
+  aiFailureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PolicyCreateRequest {

@@ -1,6 +1,7 @@
 package com.nextgen.claims.controller;
 
 import com.nextgen.claims.docvalidation.agent.ClaimOrchestrator;
+import com.nextgen.claims.docvalidation.agent.ClaimStatusAgent;
 import com.nextgen.claims.docvalidation.model.ClaimEntity;
 import com.nextgen.claims.docvalidation.model.ClaimProcessingStatus;
 import com.nextgen.claims.docvalidation.model.ClaimRequest;
@@ -39,13 +40,18 @@ public class ClaimController {
 
     private final ClaimOrchestrator claimOrchestrator;
     private final ClaimEntityRepository claimEntityRepository;
+    private final ClaimStatusAgent claimStatusAgent;
     private final RulesEngineService rulesEngineService;
     private final PolicyService policyService;
     private final ObjectMapper objectMapper;
 
     @GetMapping("/policy/{policyNumber}")
-    public PolicyLookupResponse lookupPolicy(@PathVariable String policyNumber) {
-        return policyService.lookup(policyNumber);
+    public ResponseEntity<PolicyLookupResponse> lookupPolicy(@PathVariable String policyNumber) {
+        try {
+            return ResponseEntity.ok(policyService.lookup(policyNumber));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/questions")
@@ -71,7 +77,8 @@ public class ClaimController {
         ClaimSubmitRequest submitRequest = objectMapper.readValue(claimJson, ClaimSubmitRequest.class);
         ClaimRequest request = toClaimRequest(submitRequest);
 
-        String claimId = "clm_" + UUID.randomUUID().toString().substring(0, 8);
+        long claimNum = Math.abs(UUID.randomUUID().getLeastSignificantBits() % 1_000_000L);
+        String claimId = String.format("CLM%06d", claimNum);
 
         // Copy bytes before returning — multipart temp files may be cleaned up after 202 response
         List<MultipartFile> copiedFiles = files.stream()
@@ -84,6 +91,7 @@ public class ClaimController {
         // Persist initial RECEIVED state so GET /{claimId} works immediately
         claimEntityRepository.save(ClaimEntity.builder()
                 .claimId(claimId)
+                .customerId(submitRequest.getCustomerId())
                 .claimType(request.getClaimType())
                 .claimReason(request.getClaimReason())
                 .answers(request.getAnswers())
@@ -103,10 +111,21 @@ public class ClaimController {
                         .build());
     }
 
+    @GetMapping
+    public List<ClaimEntity> getAllClaims() {
+        return claimStatusAgent.getAllClaims();
+    }
+
+    @GetMapping("/by-customer/{customerId}")
+    public List<ClaimEntity> getClaimsByCustomer(@PathVariable String customerId) {
+        return claimEntityRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+    }
+
     @GetMapping("/{claimId}")
-    public ClaimEntity getClaim(@PathVariable String claimId) {
-        return claimEntityRepository.findById(claimId)
-                .orElseThrow(() -> new IllegalArgumentException("Claim not found: " + claimId));
+    public ResponseEntity<ClaimEntity> getClaim(@PathVariable String claimId) {
+        return claimStatusAgent.getClaimById(claimId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     private ClaimRequest toClaimRequest(ClaimSubmitRequest submitRequest) {

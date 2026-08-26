@@ -7,6 +7,8 @@ import com.nextgen.claims.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PolicyService {
@@ -14,11 +16,13 @@ public class PolicyService {
     private final PolicyRepository policyRepository;
 
     public PolicyLookupResponse lookup(String policyNumber) {
-        // findById covers policies whose policyNumber is stored as _id (Spring Data @Id).
-        // findByPolicyNumber covers documents inserted externally with policyNumber as a field.
         Policy policy = policyRepository.findById(policyNumber)
                 .or(() -> policyRepository.findByPolicyNumber(policyNumber))
                 .orElseThrow(() -> new IllegalArgumentException("Policy not found: " + policyNumber));
+
+        if (!policy.isActive()) {
+            throw new IllegalArgumentException("Policy " + policyNumber + " is not active");
+        }
 
         return PolicyLookupResponse.builder()
                 .policyId(policy.getPolicyNumber())
@@ -26,6 +30,10 @@ public class PolicyService {
                 .claimType(policy.getClaimType())
                 .policyholderName(policy.getPolicyholderName())
                 .build();
+    }
+
+    public List<Policy> findByCustomerId(String customerId) {
+        return policyRepository.findByCustomerIdAndActiveTrue(customerId);
     }
 
     public Policy create(PolicyCreateRequest request) {

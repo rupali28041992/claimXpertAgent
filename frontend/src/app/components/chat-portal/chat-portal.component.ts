@@ -2,11 +2,13 @@ import {
   Component, OnInit, OnDestroy, AfterViewChecked,
   ElementRef, ViewChild, ChangeDetectorRef
 } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormField } from '../../models/form-schema.model';
 import { ClaimsService, DocumentCategory, QuestionnaireState } from '../../services/claims.service';
-import { ClaimSubmitResponse, ClaimStatus, DocumentResult, PolicyLookupResponse } from '../../models/claim-api.model';
+import { ClaimSubmitResponse, ClaimStatus, DocumentResult, PolicyLookupResponse, PolicyRecord } from '../../models/claim-api.model';
+import { AuthService } from '../../services/auth.service';
 
 const CLAIM_TYPE_TO_ANSWER: Record<string, string> = {
   MEDICAL: 'health_treatment',
@@ -26,7 +28,7 @@ const OTHERS_DOC: DocumentCategory = {
 @Component({
   selector: 'app-chat-portal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './chat-portal.component.html',
   styleUrls: ['./chat-portal.component.scss']
 })
@@ -65,6 +67,15 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
   claimRef = '';
 
   private pollSubscription?: Subscription;
+  private agentStageTimer?: ReturnType<typeof setInterval>;
+  agentStage = 0;   // 0-3: which agent is currently "running"
+
+  readonly agentPipeline = [
+    { icon: 'ocr',    name: 'Reading Your Documents',   techName: 'Document OCR Agent',       desc: ['Extracting text from uploaded files…', 'Running optical character recognition…', 'Parsing document structure…'] },
+    { icon: 'rag',    name: 'Checking Policy Coverage', techName: 'Policy RAG Agent',          desc: ['Searching policy clause embeddings…', 'Matching claim context to clauses…', 'Ranking relevant provisions…'] },
+    { icon: 'assess', name: 'Assessing Your Claim',     techName: 'Claims Assessment Agent',   desc: ['Evaluating coverage eligibility…', 'Cross-checking diagnosis codes…', 'Verifying exclusion clauses…'] },
+    { icon: 'decide', name: 'Preparing Your Decision',  techName: 'Decision Engine',           desc: ['Compiling agent findings…', 'Generating verdict rationale…', 'Finalising decision report…'] },
+  ];
 
   /** Field descriptor for the submit-zone document uploader. */
   readonly docsField: FormField = {
@@ -79,9 +90,13 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
   selectedFiles: Record<string, File[] | undefined> = {};
   dragOverField: string | null = null;
   policyNumber = '';
-  policyCheckState: 'idle' | 'checking' | 'found' | 'not-found' = 'idle';
+  policyCheckState: 'idle' | 'checking' | 'found' | 'not-found' | 'no-policies' = 'idle';
   verifiedPolicyId = '';
   verifiedHolderName = '';
+
+  userPolicies: PolicyRecord[] = [];
+  isPoliciesLoading = false;
+  selectedPolicyNumber = '';
 
   today = new Date().toISOString().split('T')[0];
   private shouldScroll = false;
@@ -94,15 +109,53 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
   /** Maps a dynamically-generated file field id (e.g. "doc_0") back to the document name required by the backend. */
   private documentLabels: { [fieldId: string]: string } = {};
 
+  /** Drives the wizard stepper: 1 = policy, 2 = details, 3 = docs, 4 = review */
+  get currentStep(): number {
+    if (this.policyCheckState !== 'found') return 1;
+    if (!this.questionsComplete) return 2;
+    if (!this.docsConfirmed) return 3;
+    return 4;
+  }
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private claimsService: ClaimsService
+    private claimsService: ClaimsService,
+    public authService: AuthService,
+    private router: Router
   ) {}
+
+  goToClaimStatus(): void {
+    this.router.navigate(['/status']);
+  }
 
   ngOnInit(): void {
     this.form = this.fb.group({});
     this.loadInitialQuestions();
+    this.loadUserPolicies();
+  }
+
+  private loadUserPolicies(): void {
+    const user = this.authService.currentUser;
+    if (!user?.customerId) {
+      this.policyCheckState = 'no-policies';
+      return;
+    }
+    this.isPoliciesLoading = true;
+    this.claimsService.getPoliciesForUser(user.customerId).subscribe({
+      next: policies => {
+        this.userPolicies = policies.filter(p => p.active);
+        this.isPoliciesLoading = false;
+        if (this.userPolicies.length === 0) this.policyCheckState = 'no-policies';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.userPolicies = [];
+        this.isPoliciesLoading = false;
+        this.policyCheckState = 'no-policies';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -114,16 +167,28 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   ngOnDestroy(): void {
     this.pollSubscription?.unsubscribe();
+    clearInterval(this.agentStageTimer);
   }
 
   private startPolling(claimId: string): void {
     this.isPolling = true;
+    this.agentStage = 0;
+
+    // Advance the agent stage display every 6 s (capped at last stage)
+    this.agentStageTimer = setInterval(() => {
+      if (this.agentStage < this.agentPipeline.length - 1) {
+        this.agentStage++;
+        this.cdr.detectChanges();
+      }
+    }, 6000);
+
     this.pollSubscription = interval(3000).pipe(
       switchMap(() => this.claimsService.getClaimStatus(claimId)),
       takeWhile(res => !this.isTerminalStatus(res.status), true)
     ).subscribe({
       next: res => {
         if (this.isTerminalStatus(res.status)) {
+          clearInterval(this.agentStageTimer);
           this.submitResult = res;
           this.isPolling = false;
           this.shouldScroll = true;
@@ -131,6 +196,7 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
         }
       },
       error: () => {
+        clearInterval(this.agentStageTimer);
         this.isPolling = false;
         this.submitError = 'Unable to retrieve claim status. Please check the claim reference.';
         this.cdr.detectChanges();
@@ -449,6 +515,17 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
     });
   }
 
+  selectPolicy(policyNumber: string): void {
+    if (!policyNumber) return;
+    const policy = this.userPolicies.find(p => p.policyNumber === policyNumber);
+    if (!policy) return;
+    this.verifiedPolicyId = policy.policyNumber;
+    this.verifiedHolderName = policy.policyholderName || '';
+    this.policyCheckState = 'found';
+    this.preSeedClaimType(policy.claimType);
+    this.cdr.detectChanges();
+  }
+
   private preSeedClaimType(claimType: string): void {
     const answer = CLAIM_TYPE_TO_ANSWER[claimType?.toUpperCase()];
     if (!answer) return;
@@ -488,7 +565,7 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
     });
 
     const claimRequest = {
-      customerId: 'guest',
+      customerId: this.authService.currentUser?.customerId || 'guest',
       policyId: this.verifiedPolicyId || 'POL-UNKNOWN',
       claimType: this.derivedClaimType || 'UNKNOWN',
       claimReason: this.derivedClaimReason || 'Unknown',
@@ -524,6 +601,7 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.isSubmitting = false;
         this.currentField = null;
         this.shouldScroll = true;
+        localStorage.setItem('lastClaimId', response.claimId);
         this.startPolling(response.claimId);
       },
       error: () => {

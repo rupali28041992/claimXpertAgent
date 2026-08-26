@@ -27,6 +27,7 @@ public class ClaimEntity {
     @Id
     private String claimId;
 
+    private String customerId;   // logged-in user's customerId, used to scope the list view
     private String claimType;
     private String claimReason;
     private Map<String, Object> answers;
