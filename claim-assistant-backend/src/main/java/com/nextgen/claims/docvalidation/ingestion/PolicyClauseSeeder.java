@@ -28,27 +28,29 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "docvalidation.ingestion", name = "enabled", matchIfMissing = false)
 public class PolicyClauseSeeder implements ApplicationRunner {
 
-    private static final String SEED_CLAIM_TYPE = "MEDICAL";
-
     private final PolicyClauseIngestor policyClauseIngestor;
     private final PolicyClauseRepository policyClauseRepository;
     private final DocValidationProperties properties;
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!policyClauseRepository.findByClaimType(SEED_CLAIM_TYPE).isEmpty()) {
-            log.info("[PolicyClauseSeeder] skipping seed for {} - clauses already present", SEED_CLAIM_TYPE);
+        DocValidationProperties.Ingestion ing = properties.getIngestion();
+        seedIfAbsent("MEDICAL", ing.getMedicalPolicyPath());
+        seedIfAbsent("TRAVEL",  ing.getTravelPolicyPath());
+    }
+
+    private void seedIfAbsent(String claimType, String pdfPath) {
+        if (!policyClauseRepository.findByClaimType(claimType).isEmpty()) {
+            log.info("[PolicyClauseSeeder] skipping seed for {} - clauses already present", claimType);
             return;
         }
-
-        File pdfFile = new File(properties.getIngestion().getMedicalPolicyPath());
+        File pdfFile = new File(pdfPath);
         if (!pdfFile.exists()) {
             log.warn("[PolicyClauseSeeder] seed file not found, skipping: {}", pdfFile.getAbsolutePath());
             return;
         }
-
-        List<PolicyClause> ingested = policyClauseIngestor.ingest(pdfFile, SEED_CLAIM_TYPE, pdfFile.getName());
+        List<PolicyClause> ingested = policyClauseIngestor.ingest(pdfFile, claimType, pdfFile.getName());
         log.info("[PolicyClauseSeeder] seeded {} clause(s) for {} from {}",
-                ingested.size(), SEED_CLAIM_TYPE, pdfFile.getName());
+                ingested.size(), claimType, pdfFile.getName());
     }
 }

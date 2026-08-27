@@ -104,10 +104,14 @@ public class DocumentEvidenceExtractor {
 
         return DocumentEvidence.builder()
                 .documentType(detectDocumentType(text,
-                        "flight",
-                        "boarding pass",
-                        "airline",
-                        "itinerary"))
+                        "boarding pass",   // BOARDING_PASS  — before generic "flight"
+                        "policy bond",     // POLICY_BOND    — before "baggage" (policy bond lists baggage coverage)
+                        "cancellation",    // CANCELLATION   — trip cancellation confirmation, before generic "flight"
+                        "baggage",         // BAGGAGE        — BAGGAGE_LOSS_REPORT / PIR
+                        "delay",           // DELAY          — AIRLINE_DELAY_CERTIFICATE contains DELAY
+                        "itinerary",       // ITINERARY      — flight itinerary / booking confirmation
+                        "airline",         // AIRLINE
+                        "flight"))
                 .hospitalName(null)
                 .diagnosis(null)
                 .admissionDate(null)

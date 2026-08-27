@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb+srv://rupalijain046_db_user:zPb8Ru3wjmMZzVpt@cluster0.6hlivfs.mongodb.net/claims_assistant
+      uri: mongodb://localhost:27017/claim_assistant
 
   ai:
     ollama:
@@ -43,6 +43,7 @@ docvalidation:
   ingestion:
     enabled: true
     medical-policy-path: RAG_IngestionPolicyPdfs/Medical_Insurance_Policy_ClaimXpert.pdf
+    travel-policy-path: RAG_IngestionPolicyPdfs/Travel_Insurance_Policy_ClaimXpert.pdf
   document:
     max-file-size: 10485760
     allowed-mime-types:

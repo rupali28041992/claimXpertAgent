@@ -10,12 +10,6 @@ import { ClaimsService, DocumentCategory, QuestionnaireState } from '../../servi
 import { ClaimSubmitResponse, ClaimStatus, DocumentResult, PolicyLookupResponse, PolicyRecord } from '../../models/claim-api.model';
 import { AuthService } from '../../services/auth.service';
 
-const CLAIM_TYPE_TO_ANSWER: Record<string, string> = {
-  MEDICAL: 'health_treatment',
-  MOTOR:   'vehicle_incident',
-  TRAVEL:  'travel_disruption',
-  LIFE:    'policyholder_death'
-};
 import { interval, Subscription } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
 
@@ -505,7 +499,6 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
         this.verifiedPolicyId = res.policyId;
         this.verifiedHolderName = res.policyholderName || '';
         this.policyCheckState = 'found';
-        this.preSeedClaimType(res.claimType);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -522,29 +515,7 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.verifiedPolicyId = policy.policyNumber;
     this.verifiedHolderName = policy.policyholderName || '';
     this.policyCheckState = 'found';
-    this.preSeedClaimType(policy.claimType);
     this.cdr.detectChanges();
-  }
-
-  private preSeedClaimType(claimType: string): void {
-    const answer = CLAIM_TYPE_TO_ANSWER[claimType?.toUpperCase()];
-    if (!answer) return;
-
-    // Find the what_happened field from the loaded questions
-    const field = this.dynamicQuestions.find(q => q.id === 'what_happened');
-    if (!field) return;
-
-    // Skip if already answered
-    if (this.answeredFields.find(a => a.field.id === 'what_happened')) return;
-
-    this.form.get('what_happened')?.setValue(answer);
-    this.currentAnswers['what_happened'] = answer;
-
-    const label = field.options?.find(o => o.value === answer)?.label ?? answer;
-    this.answeredFields.push({ field, displayValue: label });
-
-    // Ask GoRules for the next questions now that what_happened is answered
-    this.fetchNextQuestions();
   }
 
   retryPolicy(): void {

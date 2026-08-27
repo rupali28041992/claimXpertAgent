@@ -47,5 +47,6 @@ public class DocValidationProperties {
     public static class Ingestion {
         private boolean enabled = false;
         private String medicalPolicyPath = "logs/RAG_IngestionPolicies/Medical_Insurance_Policy_ClaimXpert.pdf";
+        private String travelPolicyPath  = "logs/RAG_IngestionPolicies/Travel_Insurance_Policy_ClaimXpert.pdf";
     }
 }

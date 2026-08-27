@@ -100,6 +100,26 @@ public class ClaimDecisionAgent {
 
         if (validDocuments.isEmpty()) {
 
+            // If documents WERE uploaded but all were rejected as irrelevant to the
+            // claim type (e.g. a medical discharge summary under a TRAVEL claim),
+            // that is a hard rejection — not a manual review.
+            boolean allNotRelevant = !allDocuments.isEmpty()
+                    && allDocuments.stream().allMatch(d ->
+                            d.getErrors() != null
+                            && d.getErrors().contains("DOCUMENT_NOT_RELEVANT"));
+
+            if (allNotRelevant) {
+                log.info(
+                        "[ClaimDecisionAgent] claim={} rejecting — all documents irrelevant for claimType={}",
+                        context.getClaimId(),
+                        context.getClaimType()
+                );
+                return logAndReturn(context, rejected(
+                        "The submitted documents are not relevant to claim type '"
+                        + context.getClaimType()
+                        + "'. Please submit documents appropriate for this claim type."));
+            }
+
             log.info(
                     "[ClaimDecisionAgent] claim={} no valid evidence",
                     context.getClaimId()
@@ -191,20 +211,154 @@ public class ClaimDecisionAgent {
         }
     }
 
+    // -----------------------------------------------------------------
+    // Prompt routing — each claim type gets its own flags + examples
+    // -----------------------------------------------------------------
+
     private String buildPrompt(
             ClaimContext context,
             List<DocumentResult> documents,
             List<PolicyClause> clauses) {
 
-        String evidenceSummary = buildEvidenceSummary(documents);
+        String claimType = context.getClaimType() == null ? "" : context.getClaimType().toUpperCase();
+        if ("TRAVEL".equals(claimType)) {
+            return buildTravelPrompt(context, documents, clauses);
+        }
+        return buildMedicalPrompt(context, documents, clauses);
+    }
 
-        String clausesSummary = clauses.stream()
+    // -----------------------------------------------------------------
+    // Travel prompt — travel-specific document flags and examples
+    // -----------------------------------------------------------------
+
+    private String buildTravelPrompt(
+            ClaimContext context,
+            List<DocumentResult> documents,
+            List<PolicyClause> clauses) {
+
+        String evidenceSummary = buildEvidenceSummary(documents);
+        String clausesSummary  = clauses.stream()
                 .map(c -> "  [" + c.getClaimReason() + "]: " + c.getClauseText())
                 .reduce("", (a, b) -> a + "\n" + b);
+        String answersSummary  = buildAnswersSummary(context);
 
-        String answersSummary = buildAnswersSummary(context);
+        boolean hasBoardingPass    = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "BOARDING_PASS".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasDelayCert       = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "DELAY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasBaggageReport   = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "BAGGAGE".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasPolicyBond      = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "POLICY_BOND".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasCancellationDoc = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "CANCELLATION".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasItinerary       = documents.stream().anyMatch(d ->
+                d.getEvidence() != null &&
+                "ITINERARY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
 
-        // Explicit boolean flags — small models miss presence/absence when buried in detail
+        return ("/no_think\n"
+                + "You are an expert travel insurance claims adjudicator. Produce a single JSON decision.\n\n"
+                + "-- VERIFIED DOCUMENT FLAGS (pre-computed, authoritative -- trust these exactly) --\n"
+                + "  BOARDING_PASS_PRESENT       : " + hasBoardingPass    + "   <- boarding pass verified\n"
+                + "  DELAY_CERT_PRESENT          : " + hasDelayCert       + "   <- Airline Delay Certificate verified\n"
+                + "  BAGGAGE_REPORT_PRESENT      : " + hasBaggageReport   + "   <- Baggage Loss / PIR report verified\n"
+                + "  POLICY_BOND_PRESENT         : " + hasPolicyBond      + "   <- travel policy bond verified\n"
+                + "  CANCELLATION_DOC_PRESENT    : " + hasCancellationDoc + "   <- trip cancellation confirmation verified\n"
+                + "  ITINERARY_PRESENT           : " + hasItinerary       + "   <- flight itinerary / booking confirmation verified\n\n"
+                + "-- CLAIM DETAILS --\n"
+                + "  Claim type   : " + context.getClaimType()   + "\n"
+                + "  Claim reason : " + context.getClaimReason() + "\n\n"
+                + "-- CLAIMANT QUESTIONNAIRE ANSWERS --\n"
+                + answersSummary + "\n"
+                + "-- SUBMITTED DOCUMENT EVIDENCE --\n"
+                + evidenceSummary + "\n"
+                + "-- APPLICABLE POLICY CLAUSES --\n"
+                + clausesSummary + "\n\n"
+                + "DECISION RULES (apply in order):\n"
+                + "1. REJECTED -- only if a clause explicitly EXCLUDES this event (e.g. delay under 4 hrs,\n"
+                + "   excluded destination, self-inflicted cancellation). Never reject for missing documents.\n"
+                + "2. APPROVED -- if the document flags confirm the required travel documents are present and\n"
+                + "   the event matches a coverage clause. Trust the flags -- do not second-guess them.\n"
+                + "3. MANUAL_REVIEW -- if evidence is incomplete or ambiguous and no exclusion applies.\n\n"
+                + "CRITICAL RULES:\n"
+                + "- NEVER mention discharge summaries, hospital bills, or any MEDICAL document in a TRAVEL claim.\n"
+                + "- For FLIGHT DELAY: BOARDING_PASS_PRESENT=true AND DELAY_CERT_PRESENT=true = both key documents\n"
+                + "  confirmed. Approve if a flight delay clause matches and delay is over 4 hours.\n"
+                + "- For BAGGAGE LOSS: BAGGAGE_REPORT_PRESENT=true = PIR/Baggage Loss Report confirmed. Approve\n"
+                + "  if a baggage clause matches.\n"
+                + "- For TRIP CANCELLATION: A boarding pass was NOT required at the time of cancellation\n"
+                + "  (the trip was cancelled before departure, so no boarding pass was issued). Instead, look for:\n"
+                + "  CANCELLATION_DOC_PRESENT=true (airline cancellation confirmation) OR\n"
+                + "  ITINERARY_PRESENT=true (original booking/itinerary). If POLICY_BOND_PRESENT=true AND\n"
+                + "  (CANCELLATION_DOC_PRESENT=true OR ITINERARY_PRESENT=true OR BOARDING_PASS_PRESENT=true)\n"
+                + "  AND a trip cancellation clause matches -- decide APPROVED.\n"
+                + "- If flags show required documents are present and a clause matches, decide APPROVED.\n"
+                + "- Base your decision only on travel clauses and the travel evidence listed above.\n\n"
+                + "OUTPUT FORMAT (respond with ONLY valid JSON, no extra text):\n"
+                + "{\n"
+                + "  \"decision\"      : \"APPROVED\" | \"REJECTED\" | \"MANUAL_REVIEW\",\n"
+                + "  \"reason\"        : \"2-4 sentences referencing specific clauses and evidence\",\n"
+                + "  \"keyFindings\"   : [\"finding 1\", \"finding 2\", ...],\n"
+                + "  \"conditions\"    : [\"any condition or caveat\"],\n"
+                + "  \"matchedClauses\": [\"exact clause name from the policy clauses above\"],\n"
+                + "  \"confidence\"    : 0.0-1.0\n"
+                + "}\n\n"
+                + "EXAMPLE -- APPROVED (flight delay, boarding pass + delay cert present):\n"
+                + "{\"decision\":\"APPROVED\",\"reason\":\"The boarding pass and Airline Delay Certificate confirm a "
+                + "6 hour 25 minute delay on flight AI-131, well above the 4-hour threshold. The Flight Delay clause "
+                + "covers this event and no exclusion applies.\",\"keyFindings\":[\"Boarding pass present and verified\","
+                + "\"Airline Delay Certificate confirmed -- delay: 6 hrs 25 min (exceeds 4-hour threshold)\","
+                + "\"Clause 'Flight Delay -- International' matched\",\"No exclusion applies\"],"
+                + "\"conditions\":[],\"matchedClauses\":[\"Flight Delay -- International\"],\"confidence\":0.95}\n\n"
+                + "EXAMPLE -- APPROVED (trip cancellation, cancellation confirmation + policy bond present):\n"
+                + "{\"decision\":\"APPROVED\",\"reason\":\"The airline cancellation confirmation documents a trip "
+                + "cancellation before departure due to a medical emergency. The policy bond confirms active coverage. "
+                + "The Trip Cancellation clause covers cancellation for health-related reasons and no exclusion applies.\","
+                + "\"keyFindings\":[\"Cancellation confirmation present -- reason: medical emergency\","
+                + "\"Policy bond verified -- active coverage confirmed\","
+                + "\"Clause 'Trip Cancellation' matched: covers pre-departure cancellation for health reasons\","
+                + "\"No exclusion applies\"],"
+                + "\"conditions\":[],\"matchedClauses\":[\"Trip Cancellation\"],\"confidence\":0.93}\n\n"
+                + "EXAMPLE -- REJECTED (delay under 4 hours, threshold not met):\n"
+                + "{\"decision\":\"REJECTED\",\"reason\":\"The Airline Delay Certificate shows a delay of only 2 hours "
+                + "10 minutes. The Flight Delay clause requires a minimum delay of 4 consecutive hours. This claim does "
+                + "not meet the minimum threshold.\",\"keyFindings\":[\"Boarding pass present\","
+                + "\"Airline Delay Certificate confirms delay of 2 hrs 10 min\","
+                + "\"Policy requires delay > 4 hours -- threshold not met\","
+                + "\"Rejection based on policy threshold, not missing documents\"],"
+                + "\"conditions\":[],\"matchedClauses\":[\"Flight Delay -- Domestic\"],\"confidence\":0.97}\n\n"
+                + "EXAMPLE -- MANUAL_REVIEW (boarding pass present, no delay certificate submitted):\n"
+                + "{\"decision\":\"MANUAL_REVIEW\",\"reason\":\"The boarding pass is confirmed present but no Airline "
+                + "Delay Certificate was submitted. The flight delay clause requires an official certificate from the "
+                + "carrier confirming the delay duration.\",\"keyFindings\":[\"Boarding pass present and verified\","
+                + "\"Airline Delay Certificate: NOT SUBMITTED -- required by clause\","
+                + "\"No exclusion applies to flight delay events\","
+                + "\"Manual reviewer should request Airline Delay Certificate from carrier\"],"
+                + "\"conditions\":[\"Airline Delay Certificate required before approval\"],"
+                + "\"matchedClauses\":[\"Flight Delay -- Domestic\"],\"confidence\":0.5}\n\n"
+                + "Now produce the JSON decision for the travel claim above:\n");
+    }
+
+    // -----------------------------------------------------------------
+    // Medical prompt (original logic)
+    // -----------------------------------------------------------------
+
+    private String buildMedicalPrompt(
+            ClaimContext context,
+            List<DocumentResult> documents,
+            List<PolicyClause> clauses) {
+
+        String evidenceSummary = buildEvidenceSummary(documents);
+        String clausesSummary  = clauses.stream()
+                .map(c -> "  [" + c.getClaimReason() + "]: " + c.getClauseText())
+                .reduce("", (a, b) -> a + "\n" + b);
+        String answersSummary  = buildAnswersSummary(context);
+
         boolean hasDischarge = documents.stream().anyMatch(d ->
                 d.getEvidence() != null &&
                 "DISCHARGE_SUMMARY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
@@ -217,75 +371,72 @@ public class ClaimDecisionAgent {
                 .map(d -> d.getEvidence().getDiagnosis())
                 .findFirst().orElse("not identified");
 
-        return """
-                /no_think
-                You are an expert insurance claims adjudicator. Produce a single JSON decision.
-
-                ── VERIFIED DOCUMENT FLAGS (pre-computed, authoritative — trust these exactly) ──
-                  DISCHARGE_SUMMARY_PRESENT : %s   ← if true, a valid discharge summary was verified
-                  BILL_PRESENT              : %s   ← if true, a valid hospital bill was verified
-
-                ── CLAIM DETAILS ──────────────────────────────────────────────
-                  Claim type   : %s
-                  Claim reason : %s
-                  Diagnosis    : %s
-
-                ── CLAIMANT QUESTIONNAIRE ANSWERS ─────────────────────────────
-                %s
-
-                ── SUBMITTED DOCUMENT EVIDENCE ────────────────────────────────
-                %s
-
-                ── APPLICABLE POLICY CLAUSES ──────────────────────────────────
-                %s
-
-                DECISION RULES (apply in order):
-                1. REJECTED — only if a clause explicitly EXCLUDES the diagnosis or event type. \
-                   Missing documents are never a reason to reject.
-                2. APPROVED — if at least one coverage clause is satisfied by the evidence and no \
-                   exclusion applies. Use the DISCHARGE_SUMMARY_PRESENT and BILL_PRESENT flags as \
-                   the authoritative source for whether those documents exist.
-                3. MANUAL_REVIEW — if evidence is incomplete or ambiguous and no exclusion applies.
-
-                CRITICAL RULES:
-                - If DISCHARGE_SUMMARY_PRESENT is true, you MUST NOT say the discharge summary \
-                  is missing or not found. It is verified present.
-                - If BILL_PRESENT is true, you MUST NOT say the bill is missing.
-                - A discharge summary alone (without a bill) can satisfy hospitalisation clauses \
-                  if the clause does not explicitly require a bill.
-                - Base your decision on the clauses and evidence above only.
-
-                OUTPUT FORMAT (respond with ONLY valid JSON, no extra text):
-                {
-                  "decision"      : "APPROVED" | "REJECTED" | "MANUAL_REVIEW",
-                  "reason"        : "2-4 sentences referencing specific clauses and evidence",
-                  "keyFindings"   : ["finding 1", "finding 2", ...],
-                  "conditions"    : ["any condition or caveat, e.g. subject to verification"],
-                  "matchedClauses": ["exact clause name from the policy clauses above"],
-                  "confidence"    : 0.0-1.0
-                }
-
-                EXAMPLE — APPROVED (discharge summary present, no bill required by clause):
-                {"decision":"APPROVED","reason":"The discharge summary confirms Acute Appendicitis. The In-patient Hospitalisation clause covers surgical treatment requiring 24+ hour admission and does not mandate a separate hospital bill. No exclusion clause applies to Appendicitis.","keyFindings":["Discharge summary present and verified — diagnosis: Acute Appendicitis","Treatment: Laparoscopic Appendectomy","Clause 'In-patient Hospitalisation' matched: covers surgical in-patient procedures","No exclusion clause applies to this diagnosis"],"conditions":[],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.91}
-
-                EXAMPLE — REJECTED (diagnosis explicitly excluded by policy):
-                {"decision":"REJECTED","reason":"The claim is for dental treatment. Clause 'Exclusions — Dental' explicitly excludes routine and surgical dental procedures. This exclusion applies regardless of documents submitted.","keyFindings":["Diagnosis: dental treatment","Clause 'Exclusions — Dental' directly excludes this diagnosis","Rejection is based on policy exclusion, not missing documents"],"conditions":[],"matchedClauses":["Exclusions — Dental"],"confidence":0.98}
-
-                EXAMPLE — MANUAL_REVIEW (clause requires bill, bill not present):
-                {"decision":"MANUAL_REVIEW","reason":"The In-patient Hospitalisation clause requires an itemised hospital bill for claims above Rs.10,000. The discharge summary is present but no bill was submitted. The claim cannot be approved without the bill.","keyFindings":["Discharge summary present and verified — diagnosis: Typhoid Fever","Bill: NOT PRESENT — required by clause for amounts above Rs.10,000","No exclusion applies to the stated diagnosis","Manual reviewer should request itemised hospital bill"],"conditions":["Itemised hospital bill required before approval"],"matchedClauses":["In-patient Hospitalisation"],"confidence":0.5}
-
-                Now produce the JSON decision for the claim above:
-                """
-                .formatted(
-                        hasDischarge,
-                        hasBill,
-                        context.getClaimType(),
-                        context.getClaimReason(),
-                        diagnosis,
-                        answersSummary,
-                        evidenceSummary,
-                        clausesSummary
-                );
+        return ("/no_think\n"
+                + "You are an expert insurance claims adjudicator. Produce a single JSON decision.\n\n"
+                + "-- VERIFIED DOCUMENT FLAGS (pre-computed, authoritative -- trust these exactly) --\n"
+                + "  DISCHARGE_SUMMARY_PRESENT : " + hasDischarge + "   <- if true, a valid discharge summary was verified\n"
+                + "  BILL_PRESENT              : " + hasBill      + "   <- if true, a valid hospital bill was verified\n\n"
+                + "-- CLAIM DETAILS --\n"
+                + "  Claim type   : " + context.getClaimType()   + "\n"
+                + "  Claim reason : " + context.getClaimReason() + "\n"
+                + "  Diagnosis    : " + diagnosis                + "\n\n"
+                + "-- CLAIMANT QUESTIONNAIRE ANSWERS --\n"
+                + answersSummary + "\n"
+                + "-- SUBMITTED DOCUMENT EVIDENCE --\n"
+                + evidenceSummary + "\n"
+                + "-- APPLICABLE POLICY CLAUSES --\n"
+                + clausesSummary + "\n\n"
+                + "DECISION RULES (apply in order):\n"
+                + "1. REJECTED -- only if a clause explicitly EXCLUDES the diagnosis or event type.\n"
+                + "   Missing documents are never a reason to reject.\n"
+                + "2. APPROVED -- if at least one coverage clause is satisfied by the evidence and no\n"
+                + "   exclusion applies. Use the DISCHARGE_SUMMARY_PRESENT and BILL_PRESENT flags as\n"
+                + "   the authoritative source for whether those documents exist.\n"
+                + "3. MANUAL_REVIEW -- if evidence is incomplete or ambiguous and no exclusion applies.\n\n"
+                + "CRITICAL RULES:\n"
+                + "- If DISCHARGE_SUMMARY_PRESENT is true, you MUST NOT say the discharge summary\n"
+                + "  is missing or not found. It is verified present.\n"
+                + "- If BILL_PRESENT is true, you MUST NOT say the bill is missing.\n"
+                + "- A discharge summary alone (without a bill) can satisfy hospitalisation clauses\n"
+                + "  if the clause does not explicitly require a bill.\n"
+                + "- Base your decision on the clauses and evidence above only.\n\n"
+                + "OUTPUT FORMAT (respond with ONLY valid JSON, no extra text):\n"
+                + "{\n"
+                + "  \"decision\"      : \"APPROVED\" | \"REJECTED\" | \"MANUAL_REVIEW\",\n"
+                + "  \"reason\"        : \"2-4 sentences referencing specific clauses and evidence\",\n"
+                + "  \"keyFindings\"   : [\"finding 1\", \"finding 2\", ...],\n"
+                + "  \"conditions\"    : [\"any condition or caveat, e.g. subject to verification\"],\n"
+                + "  \"matchedClauses\": [\"exact clause name from the policy clauses above\"],\n"
+                + "  \"confidence\"    : 0.0-1.0\n"
+                + "}\n\n"
+                + "EXAMPLE -- APPROVED (discharge summary present, no bill required by clause):\n"
+                + "{\"decision\":\"APPROVED\",\"reason\":\"The discharge summary confirms Acute Appendicitis. "
+                + "The In-patient Hospitalisation clause covers surgical treatment requiring 24+ hour admission "
+                + "and does not mandate a separate hospital bill. No exclusion clause applies to Appendicitis.\","
+                + "\"keyFindings\":[\"Discharge summary present and verified -- diagnosis: Acute Appendicitis\","
+                + "\"Treatment: Laparoscopic Appendectomy\","
+                + "\"Clause 'In-patient Hospitalisation' matched: covers surgical in-patient procedures\","
+                + "\"No exclusion applies to this diagnosis\"],"
+                + "\"conditions\":[],\"matchedClauses\":[\"In-patient Hospitalisation\"],\"confidence\":0.91}\n\n"
+                + "EXAMPLE -- REJECTED (diagnosis explicitly excluded by policy):\n"
+                + "{\"decision\":\"REJECTED\",\"reason\":\"The claim is for dental treatment. Clause "
+                + "'Exclusions -- Dental' explicitly excludes routine and surgical dental procedures. "
+                + "This exclusion applies regardless of documents submitted.\","
+                + "\"keyFindings\":[\"Diagnosis: dental treatment\","
+                + "\"Clause 'Exclusions -- Dental' directly excludes this diagnosis\","
+                + "\"Rejection is based on policy exclusion, not missing documents\"],"
+                + "\"conditions\":[],\"matchedClauses\":[\"Exclusions -- Dental\"],\"confidence\":0.98}\n\n"
+                + "EXAMPLE -- MANUAL_REVIEW (clause requires bill, bill not present):\n"
+                + "{\"decision\":\"MANUAL_REVIEW\",\"reason\":\"The In-patient Hospitalisation clause requires "
+                + "an itemised hospital bill for claims above Rs.10,000. The discharge summary is present but "
+                + "no bill was submitted. The claim cannot be approved without the bill.\","
+                + "\"keyFindings\":[\"Discharge summary present and verified -- diagnosis: Typhoid Fever\","
+                + "\"Bill: NOT PRESENT -- required by clause for amounts above Rs.10,000\","
+                + "\"No exclusion applies to the stated diagnosis\","
+                + "\"Manual reviewer should request itemised hospital bill\"],"
+                + "\"conditions\":[\"Itemised hospital bill required before approval\"],"
+                + "\"matchedClauses\":[\"In-patient Hospitalisation\"],\"confidence\":0.5}\n\n"
+                + "Now produce the JSON decision for the claim above:\n");
     }
 
     private String buildEvidenceSummary(List<DocumentResult> documents) {
