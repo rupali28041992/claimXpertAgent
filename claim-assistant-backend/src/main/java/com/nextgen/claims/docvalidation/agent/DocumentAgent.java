@@ -156,6 +156,14 @@ public class DocumentAgent {
                     documentId, evidence.getDocumentType(), evidence.getDiagnosis(), evidence.getBillAmount());
         }
 
+        // Ollama frequently returns the document type as free-form text
+        // ("Discharge Summary") instead of the exact token it was asked for
+        // ("DISCHARGE_SUMMARY"). Every downstream check (the type-mismatch
+        // check below, and ClaimDecisionAgent's hasDischarge/hasBill flags)
+        // does an exact/contains match, so an unnormalized type silently
+        // causes "discharge summary not found" even when one was uploaded.
+        evidence.setDocumentType(normalizeDocumentType(evidence.getDocumentType()));
+
         // ---------------------------------------------------------
         // 5. Cross-check declared vs detected document type.
         //    This is a deterministic rule — no AI needed.
@@ -166,8 +174,8 @@ public class DocumentAgent {
         String declaredCategory = context.getFileDocumentTypes().get(file.getOriginalFilename());
 
         if (declaredCategory != null && evidence.getDocumentType() != null) {
-            String declaredNorm = declaredCategory.toUpperCase().replace(" ", "_");
-            String detectedType = evidence.getDocumentType().toUpperCase();
+            String declaredNorm = normalizeDocumentType(declaredCategory);
+            String detectedType = evidence.getDocumentType();
 
             if (!detectedType.contains(declaredNorm) && !declaredNorm.contains(detectedType)) {
                 log.warn("[DocumentAgent] TYPE_MISMATCH document={} file={} declared='{}' detected='{}'",
@@ -197,5 +205,22 @@ public class DocumentAgent {
                 .evidence(evidence)
                 .status(DocumentStatus.COMPLETED)
                 .build();
+    }
+
+    /**
+     * Canonicalizes a document type / declared category to a single
+     * comparable token — e.g. "Discharge Summary", "discharge-summary" and
+     * "DISCHARGE_SUMMARY" all become "DISCHARGE_SUMMARY". Needed because
+     * Ollama's fallback extraction returns free-form text rather than the
+     * exact enum-style token it was asked for.
+     */
+    private String normalizeDocumentType(String rawType) {
+        if (rawType == null) {
+            return null;
+        }
+        return rawType.trim()
+                .toUpperCase()
+                .replaceAll("[\\s\\-]+", "_")
+                .replaceAll("_+", "_");
     }
 }
