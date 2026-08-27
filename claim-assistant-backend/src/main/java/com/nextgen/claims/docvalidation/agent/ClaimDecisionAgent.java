@@ -12,24 +12,82 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ClaimDecisionAgent {
 
+    private static final Set<String> GENERIC_HOSPITAL_WORDS = Set.of(
+            "hospital", "hospitals", "clinic", "clinics", "medical", "center",
+            "centre", "care", "health", "healthcare", "general", "city",
+            "the", "and", "nursing", "home");
+
     private final OllamaService ollamaService;
     private final ObjectMapper objectMapper;
 
     public ClaimDecisionResult decide(ClaimContext context) {
 
+        List<DocumentResult> allDocuments =
+                context.getDocuments() == null ? List.of() : context.getDocuments();
+
+        // ---------------------------------------------------------
+        // Deterministic fraud/integrity checks — run BEFORE any AI
+        // call. A mislabeled document or a hospital name that does
+        // not match the claimant's declaration is a hard rejection
+        // signal, not something that needs an AI judgement call.
+        // ---------------------------------------------------------
+
+        Optional<DocumentResult> mislabeled = allDocuments.stream()
+                .filter(d -> !d.isValid() && d.getErrors() != null)
+                .filter(d -> d.getErrors().stream()
+                        .anyMatch(e -> e.startsWith("Document mislabeled")))
+                .findFirst();
+
+        if (mislabeled.isPresent()) {
+            DocumentResult doc = mislabeled.get();
+            log.info(
+                    "[ClaimDecisionAgent] claim={} rejecting — mislabeled document file={}",
+                    context.getClaimId(),
+                    doc.getFileName()
+            );
+            return logAndReturn(context, rejected(
+                    "Document '" + doc.getFileName() + "' does not match its declared type: "
+                            + String.join("; ", doc.getErrors())));
+        }
+
         List<DocumentResult> validDocuments =
-                context.getDocuments()
+                allDocuments
                         .stream()
                         .filter(DocumentResult::isValid)
                         .filter(d -> d.getEvidence() != null)
                         .toList();
+
+        Optional<String> hospitalMismatch = checkHospitalNameMismatch(context, validDocuments);
+
+        if (hospitalMismatch.isPresent()) {
+            log.info(
+                    "[ClaimDecisionAgent] claim={} rejecting — hospital name mismatch",
+                    context.getClaimId()
+            );
+            return logAndReturn(context, rejected(hospitalMismatch.get()));
+        }
+
+        Optional<String> missingMandatory = checkMandatoryMedicalDocuments(context, validDocuments);
+
+        if (missingMandatory.isPresent()) {
+            log.info(
+                    "[ClaimDecisionAgent] claim={} manual review — missing mandatory document(s)",
+                    context.getClaimId()
+            );
+            return logAndReturn(context, manualReview(missingMandatory.get()));
+        }
 
         List<PolicyClause> clauses =
                 context.getPolicyClauses() == null
@@ -265,6 +323,113 @@ public class ClaimDecisionAgent {
         context.getAnswers().forEach((key, value) ->
                 sb.append("  ").append(key).append(": ").append(value).append("\n"));
         return sb.toString();
+    }
+
+    /**
+     * Compares the claimant's declared hospital_name answer against the
+     * hospitalName extracted from every valid document. Returns a rejection
+     * reason when neither side shares a significant (non-generic) word with
+     * the other — e.g. "Random Hospital" declared vs "Apollo Hospital"
+     * extracted. Returns empty when there is nothing reliable to compare
+     * (no declared name, no extracted name, or only generic words like
+     * "Hospital"/"Clinic" on either side) to avoid false-positive rejections.
+     */
+    private Optional<String> checkHospitalNameMismatch(
+            ClaimContext context,
+            List<DocumentResult> validDocuments) {
+
+        Object declared = context.getAnswers() == null
+                ? null
+                : context.getAnswers().get("hospital_name");
+
+        if (declared == null || declared.toString().isBlank()) {
+            return Optional.empty();
+        }
+
+        List<String> extractedNames = validDocuments.stream()
+                .map(d -> d.getEvidence().getHospitalName())
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
+
+        if (extractedNames.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String declaredName = declared.toString();
+        boolean anyMatch = extractedNames.stream()
+                .anyMatch(name -> hospitalNamesMatch(declaredName, name));
+
+        if (anyMatch) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                "Declared hospital '" + declaredName + "' does not match the hospital named "
+                        + "in the submitted documents (" + String.join(", ", extractedNames) + ").");
+    }
+
+    private boolean hospitalNamesMatch(String declared, String extracted) {
+        Set<String> declaredTokens = significantTokens(declared);
+        Set<String> extractedTokens = significantTokens(extracted);
+
+        // Nothing significant to compare (e.g. both sides just say "Hospital") —
+        // don't reject on a comparison that can't actually distinguish names.
+        if (declaredTokens.isEmpty() || extractedTokens.isEmpty()) {
+            return true;
+        }
+
+        return declaredTokens.stream().anyMatch(extractedTokens::contains);
+    }
+
+    private Set<String> significantTokens(String value) {
+        return Arrays.stream(value.toLowerCase().replaceAll("[^a-z0-9\\s]", " ").split("\\s+"))
+                .filter(token -> token.length() >= 3 && !GENERIC_HOSPITAL_WORDS.contains(token))
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * A medical claim needs a Discharge Summary and a Hospital Bill to be
+     * approvable — every other document category (Policy Bond, ID Proof,
+     * Prescription, etc.) is supplementary and is simply passed through to
+     * Ollama as extra evidence, never gated here.
+     */
+    private Optional<String> checkMandatoryMedicalDocuments(
+            ClaimContext context,
+            List<DocumentResult> validDocuments) {
+
+        if (!"MEDICAL".equalsIgnoreCase(context.getClaimType())) {
+            return Optional.empty();
+        }
+
+        boolean hasDischargeSummary = validDocuments.stream().anyMatch(d ->
+                "DISCHARGE_SUMMARY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasHospitalBill = validDocuments.stream().anyMatch(d ->
+                "HOSPITAL_BILL".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+
+        if (hasDischargeSummary && hasHospitalBill) {
+            return Optional.empty();
+        }
+
+        List<String> missing = new ArrayList<>();
+        if (!hasDischargeSummary) missing.add("Discharge Summary");
+        if (!hasHospitalBill) missing.add("Hospital Bill");
+
+        return Optional.of(
+                "Missing mandatory document(s) for a medical claim: " + String.join(" and ", missing)
+                        + ". Both a Discharge Summary and a Hospital Bill are required before this "
+                        + "claim can be approved. Any other submitted documents are treated as "
+                        + "supplementary evidence only.");
+    }
+
+    private ClaimDecisionResult rejected(String reason) {
+        return ClaimDecisionResult.builder()
+                .decision(ClaimDecisionStatus.REJECTED)
+                .conditions(List.of())
+                .matchedClauses(List.of())
+                .confidence(1.0)
+                .reason(reason)
+                .build();
     }
 
     private ClaimDecisionResult manualReview(String reason) {
