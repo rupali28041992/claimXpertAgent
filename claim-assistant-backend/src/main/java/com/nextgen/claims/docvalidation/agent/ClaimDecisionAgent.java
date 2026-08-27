@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -76,6 +77,16 @@ public class ClaimDecisionAgent {
                     context.getClaimId()
             );
             return logAndReturn(context, rejected(hospitalMismatch.get()));
+        }
+
+        Optional<String> missingMandatory = checkMandatoryMedicalDocuments(context, validDocuments);
+
+        if (missingMandatory.isPresent()) {
+            log.info(
+                    "[ClaimDecisionAgent] claim={} manual review — missing mandatory document(s)",
+                    context.getClaimId()
+            );
+            return logAndReturn(context, manualReview(missingMandatory.get()));
         }
 
         List<PolicyClause> clauses =
@@ -375,6 +386,40 @@ public class ClaimDecisionAgent {
         return Arrays.stream(value.toLowerCase().replaceAll("[^a-z0-9\\s]", " ").split("\\s+"))
                 .filter(token -> token.length() >= 3 && !GENERIC_HOSPITAL_WORDS.contains(token))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * A medical claim needs a Discharge Summary and a Hospital Bill to be
+     * approvable — every other document category (Policy Bond, ID Proof,
+     * Prescription, etc.) is supplementary and is simply passed through to
+     * Ollama as extra evidence, never gated here.
+     */
+    private Optional<String> checkMandatoryMedicalDocuments(
+            ClaimContext context,
+            List<DocumentResult> validDocuments) {
+
+        if (!"MEDICAL".equalsIgnoreCase(context.getClaimType())) {
+            return Optional.empty();
+        }
+
+        boolean hasDischargeSummary = validDocuments.stream().anyMatch(d ->
+                "DISCHARGE_SUMMARY".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+        boolean hasHospitalBill = validDocuments.stream().anyMatch(d ->
+                "HOSPITAL_BILL".equalsIgnoreCase(d.getEvidence().getDocumentType()));
+
+        if (hasDischargeSummary && hasHospitalBill) {
+            return Optional.empty();
+        }
+
+        List<String> missing = new ArrayList<>();
+        if (!hasDischargeSummary) missing.add("Discharge Summary");
+        if (!hasHospitalBill) missing.add("Hospital Bill");
+
+        return Optional.of(
+                "Missing mandatory document(s) for a medical claim: " + String.join(" and ", missing)
+                        + ". Both a Discharge Summary and a Hospital Bill are required before this "
+                        + "claim can be approved. Any other submitted documents are treated as "
+                        + "supplementary evidence only.");
     }
 
     private ClaimDecisionResult rejected(String reason) {
