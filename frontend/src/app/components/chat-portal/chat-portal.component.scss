@@ -1581,6 +1581,28 @@ form { display: flex; flex-direction: column; }
   animation: slideDown .2s ease forwards;
 }
 
+.btn-change-policy {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #15803d;
+  color: #15803d;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.73rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: #15803d;
+    color: white;
+  }
+}
+
 // ─── CARD FOOTER ─────────────────────────────────────────────
 .card-footer {
   display: flex;

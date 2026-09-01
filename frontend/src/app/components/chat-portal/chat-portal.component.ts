@@ -515,6 +515,65 @@ export class ChatPortalComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.verifiedPolicyId = policy.policyNumber;
     this.verifiedHolderName = policy.policyholderName || '';
     this.policyCheckState = 'found';
+
+    // Pre-fill "what_happened" based on the policy's claimType so the user
+    // goes straight to claim-type-specific questions instead of the generic picker.
+    const claimTypeMap: Record<string, string> = {
+      MEDICAL: 'health_treatment',
+      TRAVEL:  'travel_disruption',
+      MOTOR:   'vehicle_incident',
+      LIFE:    'policyholder_death'
+    };
+    const labelMap: Record<string, string> = {
+      health_treatment:   'I (or a family member) needed medical treatment or hospitalization',
+      travel_disruption:  'I experienced a problem during a flight or travel trip',
+      vehicle_incident:   'My vehicle was damaged, in an accident, or stolen',
+      policyholder_death: 'The insured person has passed away'
+    };
+    const scenario = claimTypeMap[(policy.claimType || '').toUpperCase()];
+    if (scenario) {
+      this.currentAnswers = { what_happened: scenario };
+      const existingField = this.dynamicQuestions.find(q => q.id === 'what_happened');
+      const whatHappenedField: FormField = existingField || {
+        id: 'what_happened',
+        type: 'radio',
+        label: 'What happened? Select the situation that best describes your claim.',
+        required: true,
+        options: [
+          { value: 'vehicle_incident',   label: 'My vehicle was damaged, in an accident, or stolen' },
+          { value: 'health_treatment',   label: 'I (or a family member) needed medical treatment or hospitalization' },
+          { value: 'travel_disruption',  label: 'I experienced a problem during a flight or travel trip' },
+          { value: 'policyholder_death', label: 'The insured person has passed away' }
+        ]
+      };
+      this.answeredFields = [{ field: whatHappenedField, displayValue: labelMap[scenario] || scenario }];
+      if (!this.form.contains('what_happened')) {
+        this.form.addControl('what_happened', this.fb.control(scenario));
+      } else {
+        this.form.get('what_happened')?.setValue(scenario);
+      }
+      this.fetchNextQuestions();
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  changePolicy(): void {
+    this.selectedPolicyNumber = '';
+    this.verifiedPolicyId = '';
+    this.verifiedHolderName = '';
+    this.policyCheckState = 'idle';
+    this.currentAnswers = {};
+    this.answeredFields = [];
+    this.questionsComplete = false;
+    this.docsConfirmed = false;
+    this.documentUploads = {};
+    this.requiredDocuments = [];
+    this.derivedClaimType = null;
+    this.derivedClaimReason = null;
+    this.selectedFiles = {};
+    this.form = this.fb.group({});
+    this.loadInitialQuestions();
     this.cdr.detectChanges();
   }
 

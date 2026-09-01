@@ -15,13 +15,16 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Seeds two demo accounts on startup so a fresh MongoDB has working login credentials.
+ * Seeds demo accounts on startup so a fresh MongoDB has working login credentials.
  * Idempotent — skipped if the user already exists.
  *
  * Account 1 — john.smith / john123
  *   Has an active MEDICAL policy. Can file and review claims.
  *
  * Account 2 — jane.doe / jane123
+ *   Has an active TRAVEL policy. Can file travel claims.
+ *
+ * Account 3 — raj.kumar / raj123
  *   Has no active policy. Sees "No Active Policies" when trying to file.
  */
 @Slf4j
@@ -55,6 +58,16 @@ public class UserPolicySeeder implements ApplicationRunner {
                 .build()
         );
 
+        seedUser(
+            User.builder()
+                .userId("raj.kumar")
+                .password("raj123")
+                .name("Raj Kumar")
+                .email("raj.kumar@demo.com")
+                .customerId("CUST-003")
+                .build()
+        );
+
         // Active MEDICAL policy for john.smith (CUST-001)
         seedPolicy(
             Policy.builder()
@@ -69,7 +82,35 @@ public class UserPolicySeeder implements ApplicationRunner {
                 .build()
         );
 
-        // jane.doe (CUST-002) intentionally has no policies — no seed needed
+        // Active TRAVEL policy for john.smith (CUST-001)
+        seedPolicy(
+            Policy.builder()
+                .policyNumber("POL-TRAV-2024-002")
+                .customerId("CUST-001")
+                .claimType("TRAVEL")
+                .policyholderName("John Smith")
+                .active(true)
+                .startDate(Instant.now().minus(365, ChronoUnit.DAYS))
+                .endDate(Instant.now().plus(365, ChronoUnit.DAYS))
+                .sumInsured(500000.0)
+                .build()
+        );
+
+        // Active TRAVEL policy for jane.doe (CUST-002)
+        seedPolicy(
+            Policy.builder()
+                .policyNumber("POL-TRAV-2024-001")
+                .customerId("CUST-002")
+                .claimType("TRAVEL")
+                .policyholderName("Jane Doe")
+                .active(true)
+                .startDate(Instant.now().minus(365, ChronoUnit.DAYS))
+                .endDate(Instant.now().plus(365, ChronoUnit.DAYS))
+                .sumInsured(500000.0)
+                .build()
+        );
+
+        // raj.kumar (CUST-003) intentionally has no policies — no seed needed
     }
 
     private void seedUser(User user) {
