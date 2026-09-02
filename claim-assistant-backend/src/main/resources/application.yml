@@ -13,7 +13,7 @@ spring:
     ollama:
       base-url: http://localhost:11434
       chat:
-        model: qwen2.5:7b-instruct-q4_K_M
+        model: qwen2.5:3b
         options:
           keep-alive: 10m
           num-predict: 1024
@@ -56,6 +56,15 @@ docvalidation:
     top-k: 8
   decision:
     max-ocr-chars-per-doc: 4000
+
+app:
+  notification:
+    primary:
+      username: rupalijain046@gmail.com        # replace with your primary Gmail address
+      password: cdnw npma mhys mxmc      # replace with your primary Gmail App Password
+    fallback:
+      username: fallback@gmail.com       # replace with your fallback Gmail address
+      password: abcd efgh ijkl mnop      # replace with your fallback Gmail App Password
 
 management:
   endpoints:

@@ -9,6 +9,7 @@ import com.nextgen.claims.docvalidation.model.ClaimResult;
 import com.nextgen.claims.docvalidation.model.DocumentResult;
 import com.nextgen.claims.docvalidation.model.PolicyClause;
 import com.nextgen.claims.docvalidation.repository.ClaimEntityRepository;
+import com.nextgen.claims.service.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -30,6 +31,7 @@ public class ClaimOrchestrator {
     private final ClaimDecisionAgent claimDecisionAgent;
     private final DocValidationProperties properties;
     private final ClaimEntityRepository claimEntityRepository;
+    private final EmailNotificationService emailNotificationService;
 
     /**
      * Async entry point — called from ClaimController after the 202 is returned.
@@ -121,6 +123,10 @@ public class ClaimOrchestrator {
 
             log.info("[ClaimOrchestrator] claim={} persisted status={} aiError={}",
                     context.getClaimId(), finalStatus, aiFailureReason != null);
+
+            if (entity.getDecision() != null && !entity.getDecision().isAiError()) {
+                emailNotificationService.sendClaimDecisionEmail(entity);
+            }
         } catch (Exception e) {
             log.error("[ClaimOrchestrator] claim={} failed to persist final state", context.getClaimId(), e);
         }
