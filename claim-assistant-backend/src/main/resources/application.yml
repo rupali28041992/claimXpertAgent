@@ -12,11 +12,13 @@ spring:
   ai:
     ollama:
       base-url: http://localhost:11434
+      request-timeout: 120s
       chat:
         model: qwen2.5:3b
         options:
-          keep-alive: 10m
+          keep-alive: -1
           num-predict: 1024
+          num-ctx: 8192
       embedding:
         model: nomic-embed-text
 
@@ -60,11 +62,11 @@ docvalidation:
 app:
   notification:
     primary:
-      username: rupalijain046@gmail.com        # replace with your primary Gmail address
-      password: cdnw npma mhys mxmc      # replace with your primary Gmail App Password
+      username: rupalijain046@gmail.com
+      password: keur umgk lbei euza
     fallback:
-      username: fallback@gmail.com       # replace with your fallback Gmail address
-      password: abcd efgh ijkl mnop      # replace with your fallback Gmail App Password
+      username: k.sathisumathi@gmail.com
+      password: abcd efgh ijkl mnop
 
 management:
   endpoints:
